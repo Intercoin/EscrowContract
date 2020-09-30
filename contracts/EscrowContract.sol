@@ -48,6 +48,7 @@ contract EscrowContract is Ownable {
    
     mapping(uint256 => EscrowBox) internal escrowBoxes;
     
+    event EscrowCreated(address indexed addr, uint256 indexed escrowID);
     event EscrowStarted(address indexed participant, uint256 indexed escrowID);
     event EscrowLocked(uint256 indexed escrowID);
     //event EscrowEnded(uint256 indexed escrowID);
@@ -55,7 +56,6 @@ contract EscrowContract is Ownable {
     /**
      * Started Escrow mechanism
      * 
-     * @param escrowID Escrow Identificator
      * @param participants array of participants (one of complex arrays participants/tokens/minimums)
      * @param tokens array of tokens (one of complex arrays participants/tokens/minimums)
      * @param minimums array of minimums (one of complex arrays participants/tokens/minimums)
@@ -66,7 +66,6 @@ contract EscrowContract is Ownable {
      * @param swapBackAfterEscrow if true, then: if withdraw is called after lock expired, and boxes still contain something, then SWAP BACK (swapTo->swapFrom) left resources
      */
     function escrow (
-        uint256 escrowID,
         address[] memory participants,
         address[] memory tokens,
         uint256[] memory minimums,
@@ -76,6 +75,10 @@ contract EscrowContract is Ownable {
         address[] memory swapTo,
         bool swapBackAfterEscrow
     ) public onlyOwner {
+        
+        uint256 escrowID = generateEscrowID();
+        emit EscrowCreated(_msgSender(), escrowID);
+        
         require(escrowBoxes[escrowID].exists == false, "Such Escrow is already exists");
         require(participants.length > 0, "Participants list can not be empty");
         require(tokens.length > 0, "Tokens list can not be empty");
@@ -349,7 +352,7 @@ contract EscrowContract is Ownable {
     /**
      * method generated random Int. will be used as ID for escrow
      */
-    function generateEscrowID() public view returns (uint256) {
+    function generateEscrowID() private returns (uint256) {
         return uint256(keccak256(abi.encodePacked(
             now, 
             block.difficulty, 

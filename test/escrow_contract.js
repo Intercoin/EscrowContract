@@ -37,17 +37,16 @@ contract('EscrowContract', (accounts) => {
     const decimals = 1000000000000000000;
     const oneEther = 1*decimals; // 1eth
     const zeroAddress = "0x0000000000000000000000000000000000000000";
+    const escrowIDDefault = "100734570922887168797657783618576156018722560841569460711488213597224441016879";
   
     it('Escrow. Validate parameters. Method create', async () => {
         const Token2Instance = await ERC20Mintable.new('t2','t2');
         const Token3Instance = await ERC20Mintable.new('t3','t3');
         const EscrowContractInstance = await EscrowContractMock.new();
         
-        let escrowID = (await EscrowContractInstance.generateEscrowID());
         
         await truffleAssert.reverts(
             EscrowContractInstance.escrow(
-                escrowID, 
                 [],// address[] memory participants,
                 [Token2Instance.address, Token3Instance.address],// address[] memory tokens,
                 [200,300],// uint256[] memory minimums,
@@ -63,7 +62,6 @@ contract('EscrowContract', (accounts) => {
         
         await truffleAssert.reverts(
             EscrowContractInstance.escrow(
-                escrowID, 
                 [accountTwo,accountThree],// address[] memory participants,
                 [],// address[] memory tokens,
                 [200,300],// uint256[] memory minimums,
@@ -79,7 +77,6 @@ contract('EscrowContract', (accounts) => {
         
         await truffleAssert.reverts(
             EscrowContractInstance.escrow(
-                escrowID, 
                 [accountTwo,accountThree],// address[] memory participants,
                 [Token2Instance.address, Token3Instance.address],// address[] memory tokens,
                 [],// uint256[] memory minimums,
@@ -95,7 +92,6 @@ contract('EscrowContract', (accounts) => {
         
         await truffleAssert.reverts(
             EscrowContractInstance.escrow(
-                escrowID, 
                 [accountTwo,accountThree],// address[] memory participants,
                 [Token2Instance.address, Token3Instance.address],// address[] memory tokens,
                 [200,300],// uint256[] memory minimums,
@@ -110,7 +106,6 @@ contract('EscrowContract', (accounts) => {
         );
         await truffleAssert.reverts(
             EscrowContractInstance.escrow(
-                escrowID, 
                 [accountTwo,accountThree],// address[] memory participants,
                 [Token2Instance.address, Token3Instance.address],// address[] memory tokens,
                 [200,300],// uint256[] memory minimums,
@@ -125,7 +120,6 @@ contract('EscrowContract', (accounts) => {
         );
         await truffleAssert.reverts(
             EscrowContractInstance.escrow(
-                escrowID, 
                 [accountTwo,accountThree],// address[] memory participants,
                 [Token2Instance.address, Token3Instance.address],// address[] memory tokens,
                 [200,300],// uint256[] memory minimums,
@@ -141,7 +135,6 @@ contract('EscrowContract', (accounts) => {
         
         await truffleAssert.reverts(
             EscrowContractInstance.escrow(
-                escrowID, 
                 [accountOne,accountTwo,accountThree],// address[] memory participants,
                 [Token2Instance.address, Token3Instance.address],// address[] memory tokens,
                 [200,300,120,3230],// uint256[] memory minimums,
@@ -156,8 +149,7 @@ contract('EscrowContract', (accounts) => {
         );
         
         await truffleAssert.reverts(
-            EscrowContractInstance.escrow(
-                escrowID, 
+            EscrowContractInstance.escrow( 
                 [accountTwo,accountThree],// address[] memory participants,
                 [Token2Instance.address, Token3Instance.address],// address[] memory tokens,
                 [200,300],// uint256[] memory minimums,
@@ -180,14 +172,16 @@ contract('EscrowContract', (accounts) => {
         
         await Token2Instance.mint(accountTwo ,'0x'+(200*decimals).toString(16), { from: accountOne });
         
-        let escrowID = (await EscrowContractInstance.generateEscrowID());
         await Token2Instance.approve(EscrowContractInstance.address,'0x'+(200*decimals).toString(16), { from: accountTwo });
         await truffleAssert.reverts(
-            EscrowContractInstance.deposit(escrowID,Token2Instance.address, { from: accountTwo }),
+            EscrowContractInstance.deposit(escrowIDDefault,Token2Instance.address, { from: accountTwo }),
             "Such Escrow does not exists"
         );
         
     });
+    
+    
+        
     
     it('Escrow. Validate parameters. Deposit. "Such Escrow have already locked up" ', async () => {
         const Token2Instance = await ERC20Mintable.new('t2','t2');
@@ -196,10 +190,8 @@ contract('EscrowContract', (accounts) => {
         
         await Token2Instance.mint(accountTwo ,'0x'+(200*decimals).toString(16), { from: accountOne });
         await Token3Instance.mint(accountThree ,'0x'+(300*decimals).toString(16), { from: accountOne });
-        
-        let escrowID = (await EscrowContractInstance.generateEscrowID());
+
         await EscrowContractInstance.escrow(
-            escrowID, 
             [accountTwo,accountThree],// address[] memory participants,
             [Token2Instance.address, Token3Instance.address],// address[] memory tokens,
             [200,300],// uint256[] memory minimums,
@@ -210,6 +202,18 @@ contract('EscrowContract', (accounts) => {
             false// bool swapBackAfterEscrow
         , { from: accountOne});
         
+        var escrowID; 
+        await EscrowContractInstance.getPastEvents('EscrowCreated', {
+            filter: {addr: accountOne}, // Using an array in param means OR: e.g. 20 or 23
+            fromBlock: 0,
+            toBlock: 'latest'
+        }, function(error, events){ /* console.log(events);*/ })
+        .then(function(events){
+            escrowID = events[0].returnValues['escrowID'];
+        });
+         
+    
+
         await Token2Instance.approve(EscrowContractInstance.address,'0x'+(200*decimals).toString(16), { from: accountTwo });
         await EscrowContractInstance.deposit(escrowID,Token2Instance.address, { from: accountTwo });
         
@@ -227,9 +231,7 @@ contract('EscrowContract', (accounts) => {
         
         await Token2Instance.mint(accountFourth ,'0x'+(200*decimals).toString(16), { from: accountOne });
 
-        let escrowID = (await EscrowContractInstance.generateEscrowID());
         await EscrowContractInstance.escrow(
-            escrowID, 
             [accountTwo,accountThree],// address[] memory participants,
             [Token2Instance.address, Token3Instance.address],// address[] memory tokens,
             [200,300],// uint256[] memory minimums,
@@ -239,6 +241,16 @@ contract('EscrowContract', (accounts) => {
             [accountTwo,accountThree],// address[] memory swapTo,
             false// bool swapBackAfterEscrow
         , { from: accountOne});
+        
+        var escrowID; 
+        await EscrowContractInstance.getPastEvents('EscrowCreated', {
+            filter: {addr: accountOne}, // Using an array in param means OR: e.g. 20 or 23
+            fromBlock: 0,
+            toBlock: 'latest'
+        }, function(error, events){ /* console.log(events);*/ })
+        .then(function(events){
+            escrowID = events[0].returnValues['escrowID'];
+        });
         
         await Token3Instance.approve(EscrowContractInstance.address,'0x'+(300*decimals).toString(16), { from: accountFourth });
         await truffleAssert.reverts(
@@ -255,9 +267,7 @@ contract('EscrowContract', (accounts) => {
         
         await Token4Instance.mint(accountTwo ,'0x'+(200*decimals).toString(16), { from: accountOne });
 
-        let escrowID = (await EscrowContractInstance.generateEscrowID());
         await EscrowContractInstance.escrow(
-            escrowID, 
             [accountTwo,accountThree],// address[] memory participants,
             [Token2Instance.address, Token3Instance.address],// address[] memory tokens,
             [200,300],// uint256[] memory minimums,
@@ -267,6 +277,16 @@ contract('EscrowContract', (accounts) => {
             [accountTwo,accountThree],// address[] memory swapTo,
             false// bool swapBackAfterEscrow
         , { from: accountOne});
+        
+        var escrowID; 
+        await EscrowContractInstance.getPastEvents('EscrowCreated', {
+            filter: {addr: accountOne}, // Using an array in param means OR: e.g. 20 or 23
+            fromBlock: 0,
+            toBlock: 'latest'
+        }, function(error, events){ /* console.log(events);*/ })
+        .then(function(events){
+            escrowID = events[0].returnValues['escrowID'];
+        });
         
         await Token4Instance.approve(EscrowContractInstance.address,'0x'+(300*decimals).toString(16), { from: accountTwo });
         await truffleAssert.reverts(
@@ -283,9 +303,7 @@ contract('EscrowContract', (accounts) => {
         await Token2Instance.mint(accountTwo ,'0x'+(200*decimals).toString(16), { from: accountOne });
         await Token3Instance.mint(accountThree ,'0x'+(300*decimals).toString(16), { from: accountOne });
         
-        let escrowID = (await EscrowContractInstance.generateEscrowID());
         await EscrowContractInstance.escrow(
-            escrowID, 
             [accountTwo,accountThree],// address[] memory participants,
             [Token2Instance.address, Token3Instance.address],// address[] memory tokens,
             [200,300],// uint256[] memory minimums,
@@ -295,6 +313,16 @@ contract('EscrowContract', (accounts) => {
             [accountTwo,accountThree],// address[] memory swapTo,
             false// bool swapBackAfterEscrow
         , { from: accountOne});
+        
+        var escrowID; 
+        await EscrowContractInstance.getPastEvents('EscrowCreated', {
+            filter: {addr: accountOne}, // Using an array in param means OR: e.g. 20 or 23
+            fromBlock: 0,
+            toBlock: 'latest'
+        }, function(error, events){ /* console.log(events);*/ })
+        .then(function(events){
+            escrowID = events[0].returnValues['escrowID'];
+        });
         
         await truffleAssert.reverts(
             EscrowContractInstance.deposit(escrowID,Token3Instance.address, { from: accountThree }),
@@ -309,10 +337,9 @@ contract('EscrowContract', (accounts) => {
         
         await Token2Instance.mint(accountTwo ,'0x'+(200*decimals).toString(16), { from: accountOne });
         
-        let escrowID = (await EscrowContractInstance.generateEscrowID());
         await Token2Instance.approve(EscrowContractInstance.address,'0x'+(200*decimals).toString(16), { from: accountTwo });
         await truffleAssert.reverts(
-            EscrowContractInstance.unlock(escrowID,accountTwo, Token3Instance.address, '0x'+(200*decimals).toString(16), { from: accountTwo }),
+            EscrowContractInstance.unlock(escrowIDDefault,accountTwo, Token3Instance.address, '0x'+(200*decimals).toString(16), { from: accountTwo }),
             "Such Escrow does not exists"
         );
     });
@@ -325,9 +352,7 @@ contract('EscrowContract', (accounts) => {
         await Token2Instance.mint(accountTwo ,'0x'+(200*decimals).toString(16), { from: accountOne });
         await Token3Instance.mint(accountThree ,'0x'+(300*decimals).toString(16), { from: accountOne });
         
-        let escrowID = (await EscrowContractInstance.generateEscrowID());
         await EscrowContractInstance.escrow(
-            escrowID, 
             [accountTwo,accountThree],// address[] memory participants,
             [Token2Instance.address, Token3Instance.address],// address[] memory tokens,
             [200,300],// uint256[] memory minimums,
@@ -337,6 +362,16 @@ contract('EscrowContract', (accounts) => {
             [accountTwo,accountThree],// address[] memory swapTo,
             false// bool swapBackAfterEscrow
         , { from: accountOne});
+        
+        var escrowID; 
+        await EscrowContractInstance.getPastEvents('EscrowCreated', {
+            filter: {addr: accountOne}, // Using an array in param means OR: e.g. 20 or 23
+            fromBlock: 0,
+            toBlock: 'latest'
+        }, function(error, events){ /* console.log(events);*/ })
+        .then(function(events){
+            escrowID = events[0].returnValues['escrowID'];
+        });
         
         await Token2Instance.approve(EscrowContractInstance.address,'0x'+(200*decimals).toString(16), { from: accountTwo });
         await EscrowContractInstance.deposit(escrowID,Token2Instance.address, { from: accountTwo });
@@ -355,9 +390,7 @@ contract('EscrowContract', (accounts) => {
         await Token2Instance.mint(accountTwo ,'0x'+(200*decimals).toString(16), { from: accountOne });
         await Token3Instance.mint(accountThree ,'0x'+(300*decimals).toString(16), { from: accountOne });
         
-        let escrowID = (await EscrowContractInstance.generateEscrowID());
         await EscrowContractInstance.escrow(
-            escrowID, 
             [accountTwo,accountThree],// address[] memory participants,
             [Token2Instance.address, Token3Instance.address],// address[] memory tokens,
             [200,300],// uint256[] memory minimums,
@@ -367,6 +400,16 @@ contract('EscrowContract', (accounts) => {
             [accountTwo,accountThree,accountFourth],// address[] memory swapTo,
             false// bool swapBackAfterEscrow
         , { from: accountOne});
+        
+        var escrowID; 
+        await EscrowContractInstance.getPastEvents('EscrowCreated', {
+            filter: {addr: accountOne}, // Using an array in param means OR: e.g. 20 or 23
+            fromBlock: 0,
+            toBlock: 'latest'
+        }, function(error, events){ /* console.log(events);*/ })
+        .then(function(events){
+            escrowID = events[0].returnValues['escrowID'];
+        });
         
         await Token2Instance.approve(EscrowContractInstance.address,'0x'+(200*decimals).toString(16), { from: accountTwo });
         await EscrowContractInstance.deposit(escrowID,Token2Instance.address, { from: accountTwo });
@@ -397,9 +440,7 @@ contract('EscrowContract', (accounts) => {
         await Token3Instance.mint(accountThree ,'0x'+(300*decimals).toString(16), { from: accountOne });
         await Token3Instance.mint(accountFive ,'0x'+(300*decimals).toString(16), { from: accountOne });
         
-        let escrowID = (await EscrowContractInstance.generateEscrowID());
         await EscrowContractInstance.escrow(
-            escrowID, 
             [accountTwo,accountThree],// address[] memory participants,
             [Token2Instance.address, Token3Instance.address],// address[] memory tokens,
             [200,300],// uint256[] memory minimums,
@@ -409,6 +450,16 @@ contract('EscrowContract', (accounts) => {
             [accountTwo,accountThree,accountFourth,accountFourth],// address[] memory swapTo,
             false// bool swapBackAfterEscrow
         , { from: accountOne});
+        
+        var escrowID; 
+        await EscrowContractInstance.getPastEvents('EscrowCreated', {
+            filter: {addr: accountOne}, // Using an array in param means OR: e.g. 20 or 23
+            fromBlock: 0,
+            toBlock: 'latest'
+        }, function(error, events){ /* console.log(events);*/ })
+        .then(function(events){
+            escrowID = events[0].returnValues['escrowID'];
+        });
         
         await Token2Instance.approve(EscrowContractInstance.address,'0x'+(200*decimals).toString(16), { from: accountTwo });
         await EscrowContractInstance.deposit(escrowID,Token2Instance.address, { from: accountTwo });
@@ -430,10 +481,7 @@ contract('EscrowContract', (accounts) => {
         await Token2Instance.mint(accountTwo ,'0x'+(200*decimals).toString(16), { from: accountOne });
         await Token3Instance.mint(accountThree ,'0x'+(300*decimals).toString(16), { from: accountOne });
         
-        
-        let escrowID = (await EscrowContractInstance.generateEscrowID());
         await EscrowContractInstance.escrow(
-            escrowID, 
             [accountTwo,accountThree],// address[] memory participants,
             [Token2Instance.address, Token3Instance.address],// address[] memory tokens,
             [200,300],// uint256[] memory minimums,
@@ -443,6 +491,16 @@ contract('EscrowContract', (accounts) => {
             [accountTwo,accountThree,accountFourth],// address[] memory swapTo,
             false// bool swapBackAfterEscrow
         , { from: accountOne});
+        
+        var escrowID; 
+        await EscrowContractInstance.getPastEvents('EscrowCreated', {
+            filter: {addr: accountOne}, // Using an array in param means OR: e.g. 20 or 23
+            fromBlock: 0,
+            toBlock: 'latest'
+        }, function(error, events){ /* console.log(events);*/ })
+        .then(function(events){
+            escrowID = events[0].returnValues['escrowID'];
+        });
         
         await Token2Instance.approve(EscrowContractInstance.address,'0x'+(200*decimals).toString(16), { from: accountTwo });
         await EscrowContractInstance.deposit(escrowID,Token2Instance.address, { from: accountTwo });
@@ -464,10 +522,7 @@ contract('EscrowContract', (accounts) => {
         await Token2Instance.mint(accountTwo ,'0x'+(200*decimals).toString(16), { from: accountOne });
         await Token3Instance.mint(accountThree ,'0x'+(300*decimals).toString(16), { from: accountOne });
         
-        
-        let escrowID = (await EscrowContractInstance.generateEscrowID());
-        await EscrowContractInstance.escrow(
-            escrowID, 
+        await EscrowContractInstance.escrow( 
             [accountTwo,accountThree, accountFourth],// address[] memory participants,
             [Token2Instance.address, Token3Instance.address, Token3Instance.address],// address[] memory tokens,
             [200,300,100],// uint256[] memory minimums,
@@ -477,6 +532,16 @@ contract('EscrowContract', (accounts) => {
             [accountTwo,accountThree,accountFourth, accountTwo],// address[] memory swapTo,
             false// bool swapBackAfterEscrow
         , { from: accountOne});
+        
+        var escrowID; 
+        await EscrowContractInstance.getPastEvents('EscrowCreated', {
+            filter: {addr: accountOne}, // Using an array in param means OR: e.g. 20 or 23
+            fromBlock: 0,
+            toBlock: 'latest'
+        }, function(error, events){ /* console.log(events);*/ })
+        .then(function(events){
+            escrowID = events[0].returnValues['escrowID'];
+        });
         
         await Token2Instance.approve(EscrowContractInstance.address,'0x'+(200*decimals).toString(16), { from: accountTwo });
         await EscrowContractInstance.deposit(escrowID,Token2Instance.address, { from: accountTwo });
@@ -498,10 +563,7 @@ contract('EscrowContract', (accounts) => {
         await Token2Instance.mint(accountTwo ,'0x'+(200*decimals).toString(16), { from: accountOne });
         await Token3Instance.mint(accountThree ,'0x'+(300*decimals).toString(16), { from: accountOne });
         
-        let escrowID = (await EscrowContractInstance.generateEscrowID());
-        
         await EscrowContractInstance.escrow(
-            escrowID, 
             [accountTwo,accountThree],// address[] memory participants,
             [Token2Instance.address, Token3Instance.address],// address[] memory tokens,
             [200,300],// uint256[] memory minimums,
@@ -513,23 +575,15 @@ contract('EscrowContract', (accounts) => {
             , { from: accountOne}
         );
         
-        //
-        await truffleAssert.reverts(
-            EscrowContractInstance.escrow(
-                escrowID, 
-                [accountTwo,accountThree],// address[] memory participants,
-                [Token2Instance.address, Token3Instance.address],// address[] memory tokens,
-                [200,300],// uint256[] memory minimums,
-                50,// uint256 blockCount,
-                2,// uint256 quorumCount,
-                [accountThree,accountTwo],// address[] memory swapFrom,
-                [accountTwo,accountThree],// address[] memory swapTo,
-                false// bool swapBackAfterEscrow
-                , { from: accountOne}
-            ),
-            "Such Escrow is already exists"
-        );
-        
+        var escrowID; 
+        await EscrowContractInstance.getPastEvents('EscrowCreated', {
+            filter: {addr: accountOne}, // Using an array in param means OR: e.g. 20 or 23
+            fromBlock: 0,
+            toBlock: 'latest'
+        }, function(error, events){ /* console.log(events);*/ })
+        .then(function(events){
+            escrowID = events[0].returnValues['escrowID'];
+        });
         
     });
     
@@ -545,10 +599,7 @@ contract('EscrowContract', (accounts) => {
         const accountTwoToken2Balance = (await Token2Instance.balanceOf(accountTwo));
         const accountThreeToken3Balance = (await Token3Instance.balanceOf(accountThree));
         
-        let escrowID = (await EscrowContractInstance.generateEscrowID());
-        
         await EscrowContractInstance.escrow(
-            escrowID, 
             [accountTwo,accountThree],// address[] memory participants,
             [Token2Instance.address, Token3Instance.address],// address[] memory tokens,
             [200,300],// uint256[] memory minimums,
@@ -558,6 +609,16 @@ contract('EscrowContract', (accounts) => {
             [accountTwo,accountThree],// address[] memory swapTo,
             false// bool swapBackAfterEscrow
         , { from: accountOne});
+        
+        var escrowID; 
+        await EscrowContractInstance.getPastEvents('EscrowCreated', {
+            filter: {addr: accountOne}, // Using an array in param means OR: e.g. 20 or 23
+            fromBlock: 0,
+            toBlock: 'latest'
+        }, function(error, events){ /* console.log(events);*/ })
+        .then(function(events){
+            escrowID = events[0].returnValues['escrowID'];
+        });
         
         await Token2Instance.approve(EscrowContractInstance.address,'0x'+(200*decimals).toString(16), { from: accountTwo });
         await EscrowContractInstance.deposit(escrowID,Token2Instance.address, { from: accountTwo });
@@ -605,10 +666,7 @@ contract('EscrowContract', (accounts) => {
         const accountTwoToken2Balance = (await Token2Instance.balanceOf(accountTwo));
         const accountThreeToken3Balance = (await Token3Instance.balanceOf(accountThree));
         
-        let escrowID = (await EscrowContractInstance.generateEscrowID());
-        
         await EscrowContractInstance.escrow(
-            escrowID, 
             [accountTwo,accountThree],// address[] memory participants,
             [Token2Instance.address, Token3Instance.address],// address[] memory tokens,
             [200,300],// uint256[] memory minimums,
@@ -618,6 +676,16 @@ contract('EscrowContract', (accounts) => {
             [accountTwo,accountThree],// address[] memory swapTo,
             false// bool swapBackAfterEscrow
         , { from: accountOne});
+        
+        var escrowID; 
+        await EscrowContractInstance.getPastEvents('EscrowCreated', {
+            filter: {addr: accountOne}, // Using an array in param means OR: e.g. 20 or 23
+            fromBlock: 0,
+            toBlock: 'latest'
+        }, function(error, events){ /* console.log(events);*/ })
+        .then(function(events){
+            escrowID = events[0].returnValues['escrowID'];
+        });
         
         await Token2Instance.approve(EscrowContractInstance.address,'0x'+(200*decimals).toString(16), { from: accountTwo });
         await EscrowContractInstance.deposit(escrowID,Token2Instance.address, { from: accountTwo });
@@ -670,10 +738,7 @@ contract('EscrowContract', (accounts) => {
         const accountTwoToken2Balance = (await Token2Instance.balanceOf(accountTwo));
         const accountThreeToken3Balance = (await Token3Instance.balanceOf(accountThree));
         
-        let escrowID = (await EscrowContractInstance.generateEscrowID());
-        
-        await EscrowContractInstance.escrow(
-            escrowID, 
+        await EscrowContractInstance.escrow( 
             [accountTwo,accountThree],// address[] memory participants,
             [Token2Instance.address, Token3Instance.address],// address[] memory tokens,
             [200,300],// uint256[] memory minimums,
@@ -683,6 +748,16 @@ contract('EscrowContract', (accounts) => {
             [accountTwo,accountThree],// address[] memory swapTo,
             true// bool swapBackAfterEscrow
         , { from: accountOne});
+        
+        var escrowID; 
+        await EscrowContractInstance.getPastEvents('EscrowCreated', {
+            filter: {addr: accountOne}, // Using an array in param means OR: e.g. 20 or 23
+            fromBlock: 0,
+            toBlock: 'latest'
+        }, function(error, events){ /* console.log(events);*/ })
+        .then(function(events){
+            escrowID = events[0].returnValues['escrowID'];
+        });
         
         await Token2Instance.approve(EscrowContractInstance.address,'0x'+(200*decimals).toString(16), { from: accountTwo });
         await EscrowContractInstance.deposit(escrowID,Token2Instance.address, { from: accountTwo });
@@ -747,10 +822,7 @@ contract('EscrowContract', (accounts) => {
         const accountTwoToken2Balance = (await Token2Instance.balanceOf(accountTwo));
         const accountThreeToken3Balance = (await Token3Instance.balanceOf(accountThree));
         
-        let escrowID = (await EscrowContractInstance.generateEscrowID());
-        
-        await EscrowContractInstance.escrow(
-            escrowID, 
+        await EscrowContractInstance.escrow( 
             [accountTwo,accountThree],// address[] memory participants,
             [Token2Instance.address, Token3Instance.address],// address[] memory tokens,
             [200,300],// uint256[] memory minimums,
@@ -760,6 +832,16 @@ contract('EscrowContract', (accounts) => {
             [accountTwo,accountThree],// address[] memory swapTo,
             true// bool swapBackAfterEscrow
         , { from: accountOne});
+        
+        var escrowID; 
+        await EscrowContractInstance.getPastEvents('EscrowCreated', {
+            filter: {addr: accountOne}, // Using an array in param means OR: e.g. 20 or 23
+            fromBlock: 0,
+            toBlock: 'latest'
+        }, function(error, events){ /* console.log(events);*/ })
+        .then(function(events){
+            escrowID = events[0].returnValues['escrowID'];
+        });
         
         await Token2Instance.approve(EscrowContractInstance.address,'0x'+(200*decimals).toString(16), { from: accountTwo });
         await EscrowContractInstance.deposit(escrowID,Token2Instance.address, { from: accountTwo });
@@ -830,11 +912,7 @@ contract('EscrowContract', (accounts) => {
         await Token2Instance.mint(accountFourth ,'0x'+(200*decimals).toString(16), { from: accountOne });
         await Token3Instance.mint(accountFive ,'0x'+(300*decimals).toString(16), { from: accountOne });
     
-        
-        let escrowID = (await EscrowContractInstance.generateEscrowID());
-        
         await EscrowContractInstance.escrow(
-            escrowID, 
             [accountTwo,accountThree,accountFourth,accountFive],// address[] memory participants,
             [Token2Instance.address, Token3Instance.address,Token2Instance.address, Token3Instance.address],// address[] memory tokens,
             [200,300,200,300],// uint256[] memory minimums,
@@ -846,6 +924,16 @@ contract('EscrowContract', (accounts) => {
         , { from: accountOne}
         );
  
+        var escrowID; 
+        await EscrowContractInstance.getPastEvents('EscrowCreated', {
+            filter: {addr: accountOne}, // Using an array in param means OR: e.g. 20 or 23
+            fromBlock: 0,
+            toBlock: 'latest'
+        }, function(error, events){ /* console.log(events);*/ })
+        .then(function(events){
+            escrowID = events[0].returnValues['escrowID'];
+        });
+        
         await Token2Instance.approve(EscrowContractInstance.address,'0x'+(200*decimals).toString(16), { from: accountTwo });
         await EscrowContractInstance.deposit(escrowID,Token2Instance.address, { from: accountTwo });
         
@@ -924,11 +1012,7 @@ contract('EscrowContract', (accounts) => {
 
         const accountTwoToken2Balance = (await Token2Instance.balanceOf(accountTwo));
 
-        
-        let escrowID = (await EscrowContractInstance.generateEscrowID());
-        
         await EscrowContractInstance.escrow(
-            escrowID, 
             [accountTwo],// address[] memory participants,
             [Token2Instance.address],// address[] memory tokens,
             [200],// uint256[] memory minimums,
@@ -939,6 +1023,16 @@ contract('EscrowContract', (accounts) => {
             false// bool swapBackAfterEscrow
             , { from: accountOne}
         );
+        
+        var escrowID; 
+        await EscrowContractInstance.getPastEvents('EscrowCreated', {
+            filter: {addr: accountOne}, // Using an array in param means OR: e.g. 20 or 23
+            fromBlock: 0,
+            toBlock: 'latest'
+        }, function(error, events){ /* console.log(events);*/ })
+        .then(function(events){
+            escrowID = events[0].returnValues['escrowID'];
+        });
         
         await Token2Instance.approve(EscrowContractInstance.address,'0x'+(200*decimals).toString(16), { from: accountTwo });
         await EscrowContractInstance.deposit(escrowID,Token2Instance.address, { from: accountTwo });
@@ -971,6 +1065,5 @@ contract('EscrowContract', (accounts) => {
         );
         
     });
-
 
 });
