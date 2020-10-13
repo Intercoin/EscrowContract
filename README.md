@@ -17,7 +17,7 @@ name  | type | description
 participants|address[]| addresses list of participants who will exchange own tokens. see Note#1
 tokens|address[]| addresses list of tokens. see Note#1
 minimums|uint256| minimum amount list of tokens. see Note#1
-blockCount|uint256| escrow duration in blocks. started after escrow have been locked up
+duration|uint256| escrow duration in seconds. started after escrow have been locked up
 quorumCount|uint256| how participants need to deposit minimum tokens that escrow will be locked up
 swapFrom|address[]| addresses list or participants which tokens will be swapped from. see Note#2
 swapTo|address[]| addresses list or participants which tokens will be swapped to. see Note#2
@@ -55,7 +55,7 @@ escrowID|uint256|Escrow Identificator. getting by event after creating by `escro
     * send transaction escrow
     * all participants deposited own tokens until escrow locked up
     * escrow started and all participants starting to unlock own deposited tokens in favor to recipients. Now in any time recipients can withdraw tokens
-    * if  blockCount passed - escrow are expired. Now all participants can with drazw own tokens which are not locked (if param `swapBackAfterEscrow` is true)
+    * if  duration passed - escrow are expired. Now all participants can withdraw own tokens which are not locked (if param `swapBackAfterEscrow` is true)
     
 **Notes:**
 1. participants/tokens/minimums are combined and linked arrays with the same length. 

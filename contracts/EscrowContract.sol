@@ -21,9 +21,9 @@ contract EscrowContract is Ownable {
         mapping(address => uint256) participantsIndex;
         Recipient[] recipients;
         mapping(address => uint256) recipientsIndex;
-        uint256 blockFrom;
-        uint256 blockTo;
-        uint256 blockCount;
+        uint256 timeStart;
+        uint256 timeEnd;
+        uint256 duration;
         uint256 quorumCount;
         EnumerableMap.UintToAddressMap swapFrom;
         EnumerableMap.UintToAddressMap swapTo;
@@ -59,7 +59,7 @@ contract EscrowContract is Ownable {
      * @param participants array of participants (one of complex arrays participants/tokens/minimums)
      * @param tokens array of tokens (one of complex arrays participants/tokens/minimums)
      * @param minimums array of minimums (one of complex arrays participants/tokens/minimums)
-     * @param blockCount duration of escrow in blocks
+     * @param duration duration of escrow in seconds. will start since locked up to expire
      * @param quorumCount count of participants (which deposit own minimum). After last will initiate locked up
      * @param swapFrom array of participants which resources swap from
      * @param swapTo array of participants which resources swap to
@@ -69,7 +69,7 @@ contract EscrowContract is Ownable {
         address[] memory participants,
         address[] memory tokens,
         uint256[] memory minimums,
-        uint256 blockCount,
+        uint256 duration,
         uint256 quorumCount,
         address[] memory swapFrom,
         address[] memory swapTo,
@@ -91,9 +91,9 @@ contract EscrowContract is Ownable {
         require((swapFrom.length == swapTo.length), "Parameters swapFrom/swapTo must be the same length");
         
         
-        escrowBoxes[escrowID].blockFrom = 0;
-        escrowBoxes[escrowID].blockTo = 0;
-        escrowBoxes[escrowID].blockCount = blockCount;
+        escrowBoxes[escrowID].timeStart = 0;
+        escrowBoxes[escrowID].timeEnd = 0;
+        escrowBoxes[escrowID].duration = duration;
         escrowBoxes[escrowID].swapBackAfterEscrow = swapBackAfterEscrow;
         escrowBoxes[escrowID].lock = false;
         escrowBoxes[escrowID].exists = true;
@@ -326,7 +326,7 @@ contract EscrowContract is Ownable {
             if (
                 //escrowBoxes[escrowID].lock == true && 
                 escrowBoxes[escrowID].swapBackAfterEscrow == true &&
-                escrowBoxes[escrowID].blockTo < block.number
+                escrowBoxes[escrowID].timeEnd <= now
             ) {
                 
                 indexP = escrowBoxes[escrowID].participantsIndex[_msgSender()]; 
@@ -376,6 +376,8 @@ contract EscrowContract is Ownable {
         
         if (quorum >= escrowBoxes[escrowID].quorumCount) {
             escrowBoxes[escrowID].lock = true;
+            escrowBoxes[escrowID].timeStart = now;
+            escrowBoxes[escrowID].timeEnd = now.add(escrowBoxes[escrowID].duration);
             EscrowLocked(escrowID);
         }
     }
@@ -401,12 +403,6 @@ contract EscrowContract is Ownable {
             escrowBoxes[escrowID].swapTo.set(i, swapTo[i]);
         }
     }
-    
-    
-    
-    
-    
-    
     
 }
 

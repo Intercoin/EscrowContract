@@ -50,7 +50,7 @@ contract('EscrowContract', (accounts) => {
                 [],// address[] memory participants,
                 [Token2Instance.address, Token3Instance.address],// address[] memory tokens,
                 [200,300],// uint256[] memory minimums,
-                50,// uint256 blockCount,
+                50,// uint256 duration,
                 2,// uint256 quorumCount,
                 [accountThree,accountTwo],// address[] memory swapFrom,
                 [accountTwo,accountThree],// address[] memory swapTo,
@@ -65,7 +65,7 @@ contract('EscrowContract', (accounts) => {
                 [accountTwo,accountThree],// address[] memory participants,
                 [],// address[] memory tokens,
                 [200,300],// uint256[] memory minimums,
-                50,// uint256 blockCount,
+                50,// uint256 duration,
                 2,// uint256 quorumCount,
                 [accountThree,accountTwo],// address[] memory swapFrom,
                 [accountTwo,accountThree],// address[] memory swapTo,
@@ -80,7 +80,7 @@ contract('EscrowContract', (accounts) => {
                 [accountTwo,accountThree],// address[] memory participants,
                 [Token2Instance.address, Token3Instance.address],// address[] memory tokens,
                 [],// uint256[] memory minimums,
-                50,// uint256 blockCount,
+                50,// uint256 duration,
                 2,// uint256 quorumCount,
                 [accountThree,accountTwo],// address[] memory swapFrom,
                 [accountTwo,accountThree],// address[] memory swapTo,
@@ -95,7 +95,7 @@ contract('EscrowContract', (accounts) => {
                 [accountTwo,accountThree],// address[] memory participants,
                 [Token2Instance.address, Token3Instance.address],// address[] memory tokens,
                 [200,300],// uint256[] memory minimums,
-                50,// uint256 blockCount,
+                50,// uint256 duration,
                 2,// uint256 quorumCount,
                 [],// address[] memory swapFrom,
                 [accountTwo,accountThree],// address[] memory swapTo,
@@ -109,7 +109,7 @@ contract('EscrowContract', (accounts) => {
                 [accountTwo,accountThree],// address[] memory participants,
                 [Token2Instance.address, Token3Instance.address],// address[] memory tokens,
                 [200,300],// uint256[] memory minimums,
-                50,// uint256 blockCount,
+                50,// uint256 duration,
                 2,// uint256 quorumCount,
                 [accountThree,accountTwo],// address[] memory swapFrom,
                 [],// address[] memory swapTo,
@@ -123,7 +123,7 @@ contract('EscrowContract', (accounts) => {
                 [accountTwo,accountThree],// address[] memory participants,
                 [Token2Instance.address, Token3Instance.address],// address[] memory tokens,
                 [200,300],// uint256[] memory minimums,
-                50,// uint256 blockCount,
+                50,// uint256 duration,
                 555,// uint256 quorumCount,
                 [accountThree,accountTwo],// address[] memory swapFrom,
                 [accountTwo,accountThree],// address[] memory swapTo,
@@ -138,7 +138,7 @@ contract('EscrowContract', (accounts) => {
                 [accountOne,accountTwo,accountThree],// address[] memory participants,
                 [Token2Instance.address, Token3Instance.address],// address[] memory tokens,
                 [200,300,120,3230],// uint256[] memory minimums,
-                50,// uint256 blockCount,
+                50,// uint256 duration,
                 2,// uint256 quorumCount,
                 [accountThree,accountTwo],// address[] memory swapFrom,
                 [accountTwo,accountThree],// address[] memory swapTo,
@@ -153,7 +153,7 @@ contract('EscrowContract', (accounts) => {
                 [accountTwo,accountThree],// address[] memory participants,
                 [Token2Instance.address, Token3Instance.address],// address[] memory tokens,
                 [200,300],// uint256[] memory minimums,
-                50,// uint256 blockCount,
+                50,// uint256 duration,
                 2,// uint256 quorumCount,
                 [accountThree,accountTwo],// address[] memory swapFrom,
                 [accountOne, accountTwo,accountThree],// address[] memory swapTo,
@@ -180,9 +180,6 @@ contract('EscrowContract', (accounts) => {
         
     });
     
-    
-        
-    
     it('Escrow. Validate parameters. Deposit. "Such Escrow have already locked up" ', async () => {
         const Token2Instance = await ERC20Mintable.new('t2','t2');
         const Token3Instance = await ERC20Mintable.new('t3','t3');
@@ -195,7 +192,7 @@ contract('EscrowContract', (accounts) => {
             [accountTwo,accountThree],// address[] memory participants,
             [Token2Instance.address, Token3Instance.address],// address[] memory tokens,
             [200,300],// uint256[] memory minimums,
-            100,// uint256 blockCount,
+            100,// uint256 duration,
             1,// uint256 quorumCount,
             [accountThree,accountTwo],// address[] memory swapFrom,
             [accountTwo,accountThree],// address[] memory swapTo,
@@ -235,7 +232,7 @@ contract('EscrowContract', (accounts) => {
             [accountTwo,accountThree],// address[] memory participants,
             [Token2Instance.address, Token3Instance.address],// address[] memory tokens,
             [200,300],// uint256[] memory minimums,
-            100,// uint256 blockCount,
+            100,// uint256 duration,
             1,// uint256 quorumCount,
             [accountThree,accountTwo],// address[] memory swapFrom,
             [accountTwo,accountThree],// address[] memory swapTo,
@@ -271,7 +268,7 @@ contract('EscrowContract', (accounts) => {
             [accountTwo,accountThree],// address[] memory participants,
             [Token2Instance.address, Token3Instance.address],// address[] memory tokens,
             [200,300],// uint256[] memory minimums,
-            100,// uint256 blockCount,
+            100,// uint256 duration,
             1,// uint256 quorumCount,
             [accountThree,accountTwo],// address[] memory swapFrom,
             [accountTwo,accountThree],// address[] memory swapTo,
@@ -307,7 +304,7 @@ contract('EscrowContract', (accounts) => {
             [accountTwo,accountThree],// address[] memory participants,
             [Token2Instance.address, Token3Instance.address],// address[] memory tokens,
             [200,300],// uint256[] memory minimums,
-            100,// uint256 blockCount,
+            100,// uint256 duration,
             1,// uint256 quorumCount,
             [accountThree,accountTwo],// address[] memory swapFrom,
             [accountTwo,accountThree],// address[] memory swapTo,
@@ -356,7 +353,7 @@ contract('EscrowContract', (accounts) => {
             [accountTwo,accountThree],// address[] memory participants,
             [Token2Instance.address, Token3Instance.address],// address[] memory tokens,
             [200,300],// uint256[] memory minimums,
-            100,// uint256 blockCount,
+            100,// uint256 duration,
             2,// uint256 quorumCount,
             [accountThree,accountTwo],// address[] memory swapFrom,
             [accountTwo,accountThree],// address[] memory swapTo,
@@ -394,7 +391,7 @@ contract('EscrowContract', (accounts) => {
             [accountTwo,accountThree],// address[] memory participants,
             [Token2Instance.address, Token3Instance.address],// address[] memory tokens,
             [200,300],// uint256[] memory minimums,
-            100,// uint256 blockCount,
+            100,// uint256 duration,
             2,// uint256 quorumCount,
             [accountThree,accountTwo,accountThree],// address[] memory swapFrom,
             [accountTwo,accountThree,accountFourth],// address[] memory swapTo,
@@ -444,7 +441,7 @@ contract('EscrowContract', (accounts) => {
             [accountTwo,accountThree],// address[] memory participants,
             [Token2Instance.address, Token3Instance.address],// address[] memory tokens,
             [200,300],// uint256[] memory minimums,
-            100,// uint256 blockCount,
+            100,// uint256 duration,
             2,// uint256 quorumCount,
             [accountThree,accountTwo,accountThree, accountFive],// address[] memory swapFrom,
             [accountTwo,accountThree,accountFourth,accountFourth],// address[] memory swapTo,
@@ -485,7 +482,7 @@ contract('EscrowContract', (accounts) => {
             [accountTwo,accountThree],// address[] memory participants,
             [Token2Instance.address, Token3Instance.address],// address[] memory tokens,
             [200,300],// uint256[] memory minimums,
-            100,// uint256 blockCount,
+            100,// uint256 duration,
             2,// uint256 quorumCount,
             [accountThree,accountTwo,accountThree],// address[] memory swapFrom,
             [accountTwo,accountThree,accountFourth],// address[] memory swapTo,
@@ -526,7 +523,7 @@ contract('EscrowContract', (accounts) => {
             [accountTwo,accountThree, accountFourth],// address[] memory participants,
             [Token2Instance.address, Token3Instance.address, Token3Instance.address],// address[] memory tokens,
             [200,300,100],// uint256[] memory minimums,
-            100,// uint256 blockCount,
+            100,// uint256 duration,
             2,// uint256 quorumCount,
             [accountThree,accountTwo,accountThree, accountFourth],// address[] memory swapFrom,
             [accountTwo,accountThree,accountFourth, accountTwo],// address[] memory swapTo,
@@ -567,7 +564,7 @@ contract('EscrowContract', (accounts) => {
             [accountTwo,accountThree],// address[] memory participants,
             [Token2Instance.address, Token3Instance.address],// address[] memory tokens,
             [200,300],// uint256[] memory minimums,
-            50,// uint256 blockCount,
+            50,// uint256 duration,
             2,// uint256 quorumCount,
             [accountThree,accountTwo],// address[] memory swapFrom,
             [accountTwo,accountThree],// address[] memory swapTo,
@@ -603,7 +600,7 @@ contract('EscrowContract', (accounts) => {
             [accountTwo,accountThree],// address[] memory participants,
             [Token2Instance.address, Token3Instance.address],// address[] memory tokens,
             [200,300],// uint256[] memory minimums,
-            100,// uint256 blockCount,
+            100,// uint256 duration,
             2,// uint256 quorumCount,
             [accountThree,accountTwo],// address[] memory swapFrom,
             [accountTwo,accountThree],// address[] memory swapTo,
@@ -670,7 +667,7 @@ contract('EscrowContract', (accounts) => {
             [accountTwo,accountThree],// address[] memory participants,
             [Token2Instance.address, Token3Instance.address],// address[] memory tokens,
             [200,300],// uint256[] memory minimums,
-            100,// uint256 blockCount,
+            100,// uint256 duration,
             2,// uint256 quorumCount,
             [accountThree,accountTwo],// address[] memory swapFrom,
             [accountTwo,accountThree],// address[] memory swapTo,
@@ -701,11 +698,8 @@ contract('EscrowContract', (accounts) => {
         await EscrowContractInstance.unlock(escrowID, accountThree, Token2Instance.address, '0x'+(200*decimals).toString(16), {from: accountTwo});
         await EscrowContractInstance.unlock(escrowID, accountTwo, Token3Instance.address, '0x'+(300*decimals).toString(16), {from: accountThree});
         
-        // pass 100 block. 
-        for (let i=0; i<100; i++) {
-            await helper.advanceBlock();
-        }
-        
+        // pass 100 seconds. 
+        await helper.advanceTime(100);
         
         // withdraw
         await EscrowContractInstance.withdraw(escrowID, {from: accountTwo});
@@ -742,7 +736,7 @@ contract('EscrowContract', (accounts) => {
             [accountTwo,accountThree],// address[] memory participants,
             [Token2Instance.address, Token3Instance.address],// address[] memory tokens,
             [200,300],// uint256[] memory minimums,
-            100,// uint256 blockCount,
+            100,// uint256 duration,
             2,// uint256 quorumCount,
             [accountThree,accountTwo],// address[] memory swapFrom,
             [accountTwo,accountThree],// address[] memory swapTo,
@@ -773,6 +767,8 @@ contract('EscrowContract', (accounts) => {
         await EscrowContractInstance.unlock(escrowID, accountThree, Token2Instance.address, '0x'+(150*decimals).toString(16), {from: accountTwo});
         await EscrowContractInstance.unlock(escrowID, accountTwo, Token3Instance.address, '0x'+(150*decimals).toString(16), {from: accountThree});
       
+        // pass 100 seconds. 
+        await helper.advanceTime(100);
         
         // withdraw
         await EscrowContractInstance.withdraw(escrowID, {from: accountTwo});
@@ -826,7 +822,7 @@ contract('EscrowContract', (accounts) => {
             [accountTwo,accountThree],// address[] memory participants,
             [Token2Instance.address, Token3Instance.address],// address[] memory tokens,
             [200,300],// uint256[] memory minimums,
-            100,// uint256 blockCount,
+            100,// uint256 duration,
             2,// uint256 quorumCount,
             [accountThree,accountTwo],// address[] memory swapFrom,
             [accountTwo,accountThree],// address[] memory swapTo,
@@ -857,11 +853,8 @@ contract('EscrowContract', (accounts) => {
         await EscrowContractInstance.unlock(escrowID, accountThree, Token2Instance.address, '0x'+(150*decimals).toString(16), {from: accountTwo});
         await EscrowContractInstance.unlock(escrowID, accountTwo, Token3Instance.address, '0x'+(150*decimals).toString(16), {from: accountThree});
         
-        // pass 100 block. 
-        for (let i=0; i<100; i++) {
-            await helper.advanceBlock();
-        }
-        
+        // pass 100 seconds. 
+        await helper.advanceTime(100);
         
         // withdraw
         await EscrowContractInstance.withdraw(escrowID, {from: accountTwo});
@@ -916,7 +909,7 @@ contract('EscrowContract', (accounts) => {
             [accountTwo,accountThree,accountFourth,accountFive],// address[] memory participants,
             [Token2Instance.address, Token3Instance.address,Token2Instance.address, Token3Instance.address],// address[] memory tokens,
             [200,300,200,300],// uint256[] memory minimums,
-            100,// uint256 blockCount,
+            100,// uint256 duration,
             4,// uint256 quorumCount,
             [accountTwo,accountThree,accountFourth,accountFive],// address[] memory swapFrom,
             [accountSix,accountSeven,accountSix,accountSeven],// address[] memory swapTo,
@@ -1016,7 +1009,7 @@ contract('EscrowContract', (accounts) => {
             [accountTwo],// address[] memory participants,
             [Token2Instance.address],// address[] memory tokens,
             [200],// uint256[] memory minimums,
-            10,// uint256 blockCount,
+            10,// uint256 duration,
             1,// uint256 quorumCount,
             [accountTwo,accountTwo],// address[] memory swapFrom,
             [accountFourth,accountThree],// address[] memory swapTo,
