@@ -46,12 +46,12 @@ contract EscrowContract is Ownable {
         bool exists;
     }
    
-    mapping(uint256 => EscrowBox) internal escrowBoxes;
+    EscrowBox internal escrowBox;
     
-    event EscrowCreated(address indexed addr, uint256 indexed escrowID);
-    event EscrowStarted(address indexed participant, uint256 indexed escrowID);
-    event EscrowLocked(uint256 indexed escrowID);
-    //event EscrowEnded(uint256 indexed escrowID);
+    event EscrowCreated(address indexed addr);
+    event EscrowStarted(address indexed participant);
+    event EscrowLocked();
+    //event EscrowEnded();
     
     /**
      * Started Escrow mechanism
@@ -65,7 +65,7 @@ contract EscrowContract is Ownable {
      * @param swapTo array of participants which resources swap to
      * @param swapBackAfterEscrow if true, then: if withdraw is called after lock expired, and boxes still contain something, then SWAP BACK (swapTo->swapFrom) left resources
      */
-    function escrow (
+    constructor (
         address[] memory participants,
         address[] memory tokens,
         uint256[] memory minimums,
@@ -74,12 +74,12 @@ contract EscrowContract is Ownable {
         address[] memory swapFrom,
         address[] memory swapTo,
         bool swapBackAfterEscrow
-    ) public onlyOwner {
+    ) 
+        public 
+    {
         
-        uint256 escrowID = generateEscrowID();
-        emit EscrowCreated(_msgSender(), escrowID);
+        emit EscrowCreated(_msgSender());
         
-        require(escrowBoxes[escrowID].exists == false, "Such Escrow is already exists");
         require(participants.length > 0, "Participants list can not be empty");
         require(tokens.length > 0, "Tokens list can not be empty");
         require(minimums.length > 0, "Minimums list can not be empty");
@@ -91,19 +91,19 @@ contract EscrowContract is Ownable {
         require((swapFrom.length == swapTo.length), "Parameters swapFrom/swapTo must be the same length");
         
         
-        escrowBoxes[escrowID].timeStart = 0;
-        escrowBoxes[escrowID].timeEnd = 0;
-        escrowBoxes[escrowID].duration = duration;
-        escrowBoxes[escrowID].swapBackAfterEscrow = swapBackAfterEscrow;
-        escrowBoxes[escrowID].lock = false;
-        escrowBoxes[escrowID].exists = true;
+        escrowBox.timeStart = 0;
+        escrowBox.timeEnd = 0;
+        escrowBox.duration = duration;
+        escrowBox.swapBackAfterEscrow = swapBackAfterEscrow;
+        escrowBox.lock = false;
+        escrowBox.exists = true;
 
-        escrowBoxes[escrowID].quorumCount = (quorumCount == 0) ? participants.length : quorumCount;    
+        escrowBox.quorumCount = (quorumCount == 0) ? participants.length : quorumCount;    
         
         for (uint256 i = 0; i < participants.length; i++) {
-            escrowBoxes[escrowID].participantsIndex[participants[i]] = i;
+            escrowBox.participantsIndex[participants[i]] = i;
             
-            escrowBoxes[escrowID].participants.push(Participant({
+            escrowBox.participants.push(Participant({
                 addr: participants[i],
                 token: tokens[i],
                 min:  minimums[i],
@@ -114,55 +114,54 @@ contract EscrowContract is Ownable {
             }));
             
             //event
-            EscrowStarted(participants[i], escrowID);
+            EscrowStarted(participants[i]);
         }
 
         uint256 indexP;
         uint256 indexRtmpI;
         uint256 indexR = 0;
         
-        escrowBoxes[escrowID].recipients.push(Recipient({addr: address(swapTo[0]), exists: true}));
-        escrowBoxes[escrowID].recipientsIndex[swapTo[0]] = indexR;
+        escrowBox.recipients.push(Recipient({addr: address(swapTo[0]), exists: true}));
+        escrowBox.recipientsIndex[swapTo[0]] = indexR;
         indexR++;
         
         for (uint256 i = 0; i < swapFrom.length; i++) {
 
-            indexP = escrowBoxes[escrowID].participantsIndex[swapFrom[i]];
+            indexP = escrowBox.participantsIndex[swapFrom[i]];
 
-            escrowBoxes[escrowID].participants[indexP].recipientCount++;
+            escrowBox.participants[indexP].recipientCount++;
             
 
             // swapTo section
-            indexRtmpI = escrowBoxes[escrowID].recipientsIndex[swapTo[i]];
+            indexRtmpI = escrowBox.recipientsIndex[swapTo[i]];
             
-            if ((escrowBoxes[escrowID].recipients[indexRtmpI].exists == true) && (escrowBoxes[escrowID].recipients[indexRtmpI].addr == swapTo[i])) {
+            if ((escrowBox.recipients[indexRtmpI].exists == true) && (escrowBox.recipients[indexRtmpI].addr == swapTo[i])) {
                 // 
             } else {
-                escrowBoxes[escrowID].recipients.push(Recipient({addr: address(swapTo[i]), exists: true}));
-                escrowBoxes[escrowID].recipientsIndex[swapTo[i]] = indexR;
+                escrowBox.recipients.push(Recipient({addr: address(swapTo[i]), exists: true}));
+                escrowBox.recipientsIndex[swapTo[i]] = indexR;
                 indexR++;
             }
         }
-        _escrowPart2(escrowID, swapFrom, swapTo);
+        _escrowPart2(swapFrom, swapTo);
     }
     
     /**
      * @dev Deposit token via approve the tokens on the exchange
-     * @param escrowID escrow identificator
      * @param token token's address 
      */
-    function deposit(uint256 escrowID, address token) public  {
-        require(escrowBoxes[escrowID].exists == true, 'Such Escrow does not exists');
-        require(escrowBoxes[escrowID].lock == false, 'Such Escrow have already locked up');
+    function deposit(address token) public  {
+        require(escrowBox.exists == true, 'Such Escrow does not exists');
+        require(escrowBox.lock == false, 'Such Escrow have already locked up');
         
         // index can be zero for non-exists participants. we will check attr exists in struct
-        uint256 index = escrowBoxes[escrowID].participantsIndex[_msgSender()]; 
+        uint256 index = escrowBox.participantsIndex[_msgSender()]; 
         require(
-            escrowBoxes[escrowID].participants[index].exists == true && escrowBoxes[escrowID].participants[index].addr == _msgSender(), 
+            escrowBox.participants[index].exists == true && escrowBox.participants[index].addr == _msgSender(), 
             "Such participant does not exists in this escrow"
         );
         
-        require(escrowBoxes[escrowID].participants[index].token == token, "Such token does not exists for this participant ");
+        require(escrowBox.participants[index].token == token, "Such token does not exists for this participant ");
         
         
         uint256 _allowedAmount = IERC20(token).allowance(_msgSender(), address(this));
@@ -171,10 +170,10 @@ contract EscrowContract is Ownable {
         bool success = IERC20(token).transferFrom(_msgSender(), address(this), _allowedAmount);
         require(success == true, "Transfer tokens were failed"); 
         
-        escrowBoxes[escrowID].participants[index].balance = escrowBoxes[escrowID].participants[index].balance.add(_allowedAmount);
+        escrowBox.participants[index].balance = escrowBox.participants[index].balance.add(_allowedAmount);
         
-        if (escrowBoxes[escrowID].participants[index].min <= escrowBoxes[escrowID].participants[index].balance) {
-            tryToLockEscrow(escrowID);
+        if (escrowBox.participants[index].min <= escrowBox.participants[index].balance) {
+            tryToLockEscrow();
         }
         
     }
@@ -182,22 +181,21 @@ contract EscrowContract is Ownable {
     /**
      * Method unlocked tokens (deposited before) for recipients
      * 
-     * @param escrowID escrow identificator
      * @param recipient token's address 
      * @param token token's address 
      * @param amount token's amount
      */
-    function unlock(uint256 escrowID, address recipient, address token, uint256 amount) public {
-        require(escrowBoxes[escrowID].exists == true, 'Such Escrow does not exists');
-        require(escrowBoxes[escrowID].lock == true, 'Such Escrow have not locked yet');
+    function unlock(address recipient, address token, uint256 amount) public {
+        require(escrowBox.exists == true, 'Such Escrow does not exists');
+        require(escrowBox.lock == true, 'Such Escrow have not locked yet');
         // check exists sender in swap from
         // check exists recipient in swap to
         // also itis checked recipient as available 
         bool pairExists = false;
-        for (uint256 i = 0; i < escrowBoxes[escrowID].swapFrom.length(); i++) {
+        for (uint256 i = 0; i < escrowBox.swapFrom.length(); i++) {
             if (
-                escrowBoxes[escrowID].swapFrom.get(i) == _msgSender() &&
-                escrowBoxes[escrowID].swapTo.get(i) == recipient
+                escrowBox.swapFrom.get(i) == _msgSender() &&
+                escrowBox.swapTo.get(i) == recipient
             )  {
                 pairExists = true;
             }
@@ -205,44 +203,43 @@ contract EscrowContract is Ownable {
         require(pairExists == true, 'Such participant is not exists via recipient');
         
         // check sender exist
-        uint256 indexP = escrowBoxes[escrowID].participantsIndex[_msgSender()]; 
+        uint256 indexP = escrowBox.participantsIndex[_msgSender()]; 
         require(
-            escrowBoxes[escrowID].participants[indexP].exists == true && escrowBoxes[escrowID].participants[indexP].addr == _msgSender(), 
+            escrowBox.participants[indexP].exists == true && escrowBox.participants[indexP].addr == _msgSender(), 
             "Such participant does not exists in this escrow"
         );
         
         
-        uint256 indexR = escrowBoxes[escrowID].recipientsIndex[recipient]; 
+        uint256 indexR = escrowBox.recipientsIndex[recipient]; 
         
         // check correct token in sender
-        require(escrowBoxes[escrowID].participants[indexP].token == token, "Such token does not exists for this participant");
+        require(escrowBox.participants[indexP].token == token, "Such token does not exists for this participant");
         
         // check Available amount tokens at sender (and unlockedBalance not more than available)
         require(
-            (escrowBoxes[escrowID].participants[indexP].balance).sub(escrowBoxes[escrowID].participants[indexP].unlockedBalance) >= amount, 
+            (escrowBox.participants[indexP].balance).sub(escrowBox.participants[indexP].unlockedBalance) >= amount, 
             "Amount exceeds balance available to unlock"
         );
         
         // write additional unlockedBalance at sender
-        escrowBoxes[escrowID].participants[indexP].unlockedBalance = escrowBoxes[escrowID].participants[indexP].unlockedBalance.add(amount);
+        escrowBox.participants[indexP].unlockedBalance = escrowBox.participants[indexP].unlockedBalance.add(amount);
         
         // write fundsAvailable at recipient
-        escrowBoxes[escrowID].recipients[indexR].fundsAvailable[token] = (escrowBoxes[escrowID].recipients[indexR].fundsAvailable[token]).add(amount);
+        escrowBox.recipients[indexR].fundsAvailable[token] = (escrowBox.recipients[indexR].fundsAvailable[token]).add(amount);
         
     }
     
     /**
      * Unlock all available tokens (deposited before) equally for recipents at `swap` pairs
-     * @param escrowID escrow identificator
      */
-    function unlockAll(uint256 escrowID) public {
-        require(escrowBoxes[escrowID].exists == true, 'Such Escrow does not exists');
-        require(escrowBoxes[escrowID].lock == true, 'Such Escrow have not locked yet');
+    function unlockAll() public {
+        require(escrowBox.exists == true, 'Such Escrow does not exists');
+        require(escrowBox.lock == true, 'Such Escrow have not locked yet');
         
         // check participant exist
-        uint256 indexP = escrowBoxes[escrowID].participantsIndex[_msgSender()]; 
+        uint256 indexP = escrowBox.participantsIndex[_msgSender()]; 
         require(
-            escrowBoxes[escrowID].participants[indexP].exists == true && escrowBoxes[escrowID].participants[indexP].addr == _msgSender(), 
+            escrowBox.participants[indexP].exists == true && escrowBox.participants[indexP].addr == _msgSender(), 
             "Such participant does not exists in this escrow"
         );
         
@@ -251,20 +248,20 @@ contract EscrowContract is Ownable {
         uint256 recipientCount = 0;
         uint256 amountLeft = 0;
         uint256 indexR;
-        for (uint256 i = 0; i < escrowBoxes[escrowID].swapFrom.length(); i++) {
-            if (escrowBoxes[escrowID].swapFrom.get(i) == _msgSender())  {
+        for (uint256 i = 0; i < escrowBox.swapFrom.length(); i++) {
+            if (escrowBox.swapFrom.get(i) == _msgSender())  {
                 if (recipientCount == 0) {
-                    recipientCount = escrowBoxes[escrowID].participants[indexP].recipientCount;
+                    recipientCount = escrowBox.participants[indexP].recipientCount;
                 }
-                indexR = escrowBoxes[escrowID].recipientsIndex[escrowBoxes[escrowID].swapTo.get(i)]; 
+                indexR = escrowBox.recipientsIndex[escrowBox.swapTo.get(i)]; 
                 
-                amountLeft = escrowBoxes[escrowID].participants[indexP].balance.sub(escrowBoxes[escrowID].participants[indexP].unlockedBalance);
+                amountLeft = escrowBox.participants[indexP].balance.sub(escrowBox.participants[indexP].unlockedBalance);
                 
-                recipient = escrowBoxes[escrowID].swapTo.get(i);
-                token = escrowBoxes[escrowID].participants[indexP].token;
+                recipient = escrowBox.swapTo.get(i);
+                token = escrowBox.participants[indexP].token;
                 
-                escrowBoxes[escrowID].participants[indexP].unlockedBalance = escrowBoxes[escrowID].participants[indexP].unlockedBalance.add(amountLeft.div(recipientCount));
-                escrowBoxes[escrowID].recipients[indexR].fundsAvailable[token] = (escrowBoxes[escrowID].recipients[indexR].fundsAvailable[token]).add(amountLeft.div(recipientCount));
+                escrowBox.participants[indexP].unlockedBalance = escrowBox.participants[indexP].unlockedBalance.add(amountLeft.div(recipientCount));
+                escrowBox.recipients[indexR].fundsAvailable[token] = (escrowBox.recipients[indexR].fundsAvailable[token]).add(amountLeft.div(recipientCount));
                 recipientCount--;
                 
             }
@@ -273,10 +270,9 @@ contract EscrowContract is Ownable {
     
     /**
      * withdraw all tokens deposited and unlocked from other participants
-     * @param escrowID escrow identificator
      */
-    function withdraw(uint256 escrowID) public {
-        require(escrowBoxes[escrowID].exists == true, 'Such Escrow does not exists');
+    function withdraw() public {
+        require(escrowBox.exists == true, 'Such Escrow does not exists');
         
         // before locked up
         //// got own
@@ -289,32 +285,32 @@ contract EscrowContract is Ownable {
         uint256 indexP;
         uint256 indexR;
         bool success;
-        if (escrowBoxes[escrowID].lock == false) {
-            indexP = escrowBoxes[escrowID].participantsIndex[_msgSender()]; 
+        if (escrowBox.lock == false) {
+            indexP = escrowBox.participantsIndex[_msgSender()]; 
             
             require(
-                escrowBoxes[escrowID].participants[indexP].exists == true && escrowBoxes[escrowID].participants[indexP].addr == _msgSender(), 
+                escrowBox.participants[indexP].exists == true && escrowBox.participants[indexP].addr == _msgSender(), 
                 "Such participant does not exists in this escrow"
             );
-            amount = escrowBoxes[escrowID].participants[indexP].balance;
-            token = escrowBoxes[escrowID].participants[indexP].token;
-            escrowBoxes[escrowID].participants[indexP].balance = 0;
+            amount = escrowBox.participants[indexP].balance;
+            token = escrowBox.participants[indexP].token;
+            escrowBox.participants[indexP].balance = 0;
             
             success = IERC20(token).transfer(_msgSender(), amount);
             require(success == true, 'Transfer tokens were failed');
     
     
-        } else if (escrowBoxes[escrowID].lock == true) {
+        } else if (escrowBox.lock == true) {
             
-            indexR = escrowBoxes[escrowID].recipientsIndex[_msgSender()];
+            indexR = escrowBox.recipientsIndex[_msgSender()];
             
-            for (uint256 i = 0; i < escrowBoxes[escrowID].swapTo.length(); i++) {
-                if (escrowBoxes[escrowID].swapTo.get(i) == _msgSender())  {
-                    indexP = escrowBoxes[escrowID].participantsIndex[escrowBoxes[escrowID].swapFrom.get(i)];
-                    token = escrowBoxes[escrowID].participants[indexP].token;
-                    amount = escrowBoxes[escrowID].recipients[indexR].fundsAvailable[token];
+            for (uint256 i = 0; i < escrowBox.swapTo.length(); i++) {
+                if (escrowBox.swapTo.get(i) == _msgSender())  {
+                    indexP = escrowBox.participantsIndex[escrowBox.swapFrom.get(i)];
+                    token = escrowBox.participants[indexP].token;
+                    amount = escrowBox.recipients[indexR].fundsAvailable[token];
                     if (amount > 0) {
-                        escrowBoxes[escrowID].recipients[indexR].fundsAvailable[token] = 0;
+                        escrowBox.recipients[indexR].fundsAvailable[token] = 0;
                         success = IERC20(token).transfer(_msgSender(), amount);
                         require(success == true, 'Transfer tokens were failed');
                     }
@@ -324,21 +320,21 @@ contract EscrowContract is Ownable {
             
             // also if escrow expired sender can gow own funds 
             if (
-                //escrowBoxes[escrowID].lock == true && 
-                escrowBoxes[escrowID].swapBackAfterEscrow == true &&
-                escrowBoxes[escrowID].timeEnd <= now
+                //escrowBox.lock == true && 
+                escrowBox.swapBackAfterEscrow == true &&
+                escrowBox.timeEnd <= now
             ) {
                 
-                indexP = escrowBoxes[escrowID].participantsIndex[_msgSender()]; 
+                indexP = escrowBox.participantsIndex[_msgSender()]; 
                 
                 require(
-                    escrowBoxes[escrowID].participants[indexP].exists == true && escrowBoxes[escrowID].participants[indexP].addr == _msgSender(), 
+                    escrowBox.participants[indexP].exists == true && escrowBox.participants[indexP].addr == _msgSender(), 
                     "Such participant does not exists in this escrow"
                 );
                 
-                amount = escrowBoxes[escrowID].participants[indexP].balance.sub(escrowBoxes[escrowID].participants[indexP].unlockedBalance);
-                token = escrowBoxes[escrowID].participants[indexP].token;
-                escrowBoxes[escrowID].participants[indexP].balance = 0;
+                amount = escrowBox.participants[indexP].balance.sub(escrowBox.participants[indexP].unlockedBalance);
+                token = escrowBox.participants[indexP].token;
+                escrowBox.participants[indexP].balance = 0;
                 
                 success = IERC20(token).transfer(_msgSender(), amount);
                 require(success == true, 'Transfer tokens were failed');
@@ -350,47 +346,33 @@ contract EscrowContract is Ownable {
     }
     
     /**
-     * method generated random Int. will be used as ID for escrow
-     */
-    function generateEscrowID() private returns (uint256) {
-        return uint256(keccak256(abi.encodePacked(
-            now, 
-            block.difficulty, 
-            msg.sender
-        )));    
-    }
-    
-    /**
      * triggered after each deposit if amoint more than minimum. if true, Escrow will be lock
-     * @param escrowID escrow identificator
      * 
      */
-    function tryToLockEscrow(uint256 escrowID) internal {
-        require(escrowBoxes[escrowID].lock == false, 'Such Escrow have already locked up');
+    function tryToLockEscrow() internal {
+        require(escrowBox.lock == false, 'Such Escrow have already locked up');
         uint256 quorum = 0;
-        for (uint256 i = 0; i < escrowBoxes[escrowID].participants.length; i++) {
-            if (escrowBoxes[escrowID].participants[i].min <= escrowBoxes[escrowID].participants[i].balance) {
+        for (uint256 i = 0; i < escrowBox.participants.length; i++) {
+            if (escrowBox.participants[i].min <= escrowBox.participants[i].balance) {
                 quorum = quorum.add(1);
             }
         }
         
-        if (quorum >= escrowBoxes[escrowID].quorumCount) {
-            escrowBoxes[escrowID].lock = true;
-            escrowBoxes[escrowID].timeStart = now;
-            escrowBoxes[escrowID].timeEnd = now.add(escrowBoxes[escrowID].duration);
-            EscrowLocked(escrowID);
+        if (quorum >= escrowBox.quorumCount) {
+            escrowBox.lock = true;
+            escrowBox.timeStart = now;
+            escrowBox.timeEnd = now.add(escrowBox.duration);
+            EscrowLocked();
         }
     }
     
     
     /**
      * @dev continued part of escrow. Splitted to avoid exception "Stack too deep ..."
-     * @param escrowID Escrow Identificator
      * @param swapFrom array of participants which resources swap from
      * @param swapTo array of participants which resources swap to
      */
     function _escrowPart2(
-        uint256 escrowID,
         address[] memory swapFrom,
         address[] memory swapTo
     ) 
@@ -399,8 +381,8 @@ contract EscrowContract is Ownable {
         for (uint256 i = 0; i < swapFrom.length; i++) {
             require(!swapFrom[i].isContract(), "address in `swapFrom` can not be a contract");
             require(!swapTo[i].isContract(), "address in `swapTo` can not be a contract");
-            escrowBoxes[escrowID].swapFrom.set(i, swapFrom[i]);
-            escrowBoxes[escrowID].swapTo.set(i, swapTo[i]);
+            escrowBox.swapFrom.set(i, swapFrom[i]);
+            escrowBox.swapTo.set(i, swapTo[i]);
         }
     }
     

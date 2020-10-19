@@ -2,15 +2,7 @@
 # EscrowContract
 A smart contract with the ability to exchange one token against others.
 # Deploy
-when deploy it is no need to pass parameters in to constructor
-
-# Methods
-once installed will be use methods to exchange
-Note that contract accept tokens, it should be approve before
-
-### escrow
-Method started new escrow mechanism
-
+when deploy it is need to pass parameters in to constructor than started new escrow mechanism
 Params:
 name  | type | description
 --|--|--
@@ -23,36 +15,33 @@ swapFrom|address[]| addresses list or participants which tokens will be swapped 
 swapTo|address[]| addresses list or participants which tokens will be swapped to. see Note#2
 swapBackAfterEscrow|bool| if true,  participants can withdraw own deposited tokens after escrow expired
 
+# Methods
+once installed will be use methods to exchange
+Note that contract accept tokens, it should be approve before
+
 ### deposit
 Params:
 name  | type | description
 --|--|--
-escrowID|uint256|Escrow Identificator. getting by event after creating by `escrow`
 tokens|address| address of token.
 
 ### unlock
 Params:
 name  | type | description
 --|--|--
-escrowID|uint256|Escrow Identificator. getting by event after creating by `escrow`
 recipient|address|recipient address
 token|address|address of token.
 amount|uint256|amount
 
 ### unlockAll
-name  | type | description
---|--|--
-escrowID|uint256|Escrow Identificator. getting by event after creating by `escrow`
+there are no parameters
 
 ### withdraw
-Params:
-name  | type | description
---|--|--
-escrowID|uint256|Escrow Identificator. getting by event after creating by `escrow`
+there are no parameters
 
 # Examples
 * life cycle 
-    * send transaction escrow
+    * deploy contract
     * all participants deposited own tokens until escrow locked up
     * escrow started and all participants starting to unlock own deposited tokens in favor to recipients. Now in any time recipients can withdraw tokens
     * if  duration passed - escrow are expired. Now all participants can withdraw own tokens which are not locked (if param `swapBackAfterEscrow` is true)

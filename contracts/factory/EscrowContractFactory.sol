@@ -1,10 +1,16 @@
 pragma solidity >=0.6.0 <0.7.0;
+pragma experimental ABIEncoderV2;
 
+import "../openzeppelin-contracts/contracts/access/Ownable.sol";
 import "../EscrowContract.sol";
 
-contract EscrowContractMock is EscrowContract {
+contract EscrowContractFactory is Ownable {
     
-     /**
+    EscrowContract[] public escrowAddresses;
+
+    event EscrowCreated(EscrowContract escrow);
+    
+    /**
      * Started Escrow mechanism
      * 
      * @param participants array of participants (one of complex arrays participants/tokens/minimums)
@@ -16,7 +22,7 @@ contract EscrowContractMock is EscrowContract {
      * @param swapTo array of participants which resources swap to
      * @param swapBackAfterEscrow if true, then: if withdraw is called after lock expired, and boxes still contain something, then SWAP BACK (swapTo->swapFrom) left resources
      */
-    constructor (
+    function createEscrow (
         address[] memory participants,
         address[] memory tokens,
         uint256[] memory minimums,
@@ -26,22 +32,13 @@ contract EscrowContractMock is EscrowContract {
         address[] memory swapTo,
         bool swapBackAfterEscrow
     ) 
-        EscrowContract (participants, tokens, minimums, duration, quorumCount, swapFrom, swapTo, swapBackAfterEscrow) 
         public 
     {
-        
+        EscrowContract escrow = new EscrowContract(participants, tokens, minimums, duration, quorumCount, swapFrom, swapTo, swapBackAfterEscrow);
+        escrowAddresses.push(escrow);
+        emit EscrowCreated(escrow);
+        escrow.transferOwnership(_msgSender());
     }
-    
-    function participantsLength() public view returns(uint256 ret) {
-        ret = escrowBox.participants.length;
-    }
-    function fundsAvailable(address token) public view returns(uint256 ret) {
-        uint256 indexR = escrowBox.recipientsIndex[_msgSender()];
-        ret = escrowBox.recipients[indexR].fundsAvailable[token];
-        
-    }
-    
     
 }
-
 
