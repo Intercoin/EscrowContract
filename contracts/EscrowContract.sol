@@ -7,9 +7,9 @@ import "./openzeppelin-contracts/contracts/utils/EnumerableSet.sol";
 import "./openzeppelin-contracts/contracts/access/Ownable.sol";
 import "./openzeppelin-contracts/contracts/math/SafeMath.sol";
 import "./openzeppelin-contracts/contracts/utils/Address.sol";
+import "./openzeppelin-contracts/contracts/utils/ReentrancyGuard.sol";
 
-
-contract EscrowContract is Ownable {
+contract EscrowContract is Ownable, ReentrancyGuard {
     
     using SafeMath for uint256;
     using Address for address;
@@ -150,7 +150,7 @@ contract EscrowContract is Ownable {
      * @dev Deposit token via approve the tokens on the exchange
      * @param token token's address 
      */
-    function deposit(address token) public  {
+    function deposit(address token) public nonReentrant()  {
         require(escrowBox.exists == true, 'Such Escrow does not exists');
         require(escrowBox.lock == false, 'Such Escrow have already locked up');
         
@@ -271,7 +271,7 @@ contract EscrowContract is Ownable {
     /**
      * withdraw all tokens deposited and unlocked from other participants
      */
-    function withdraw() public {
+    function withdraw() public nonReentrant() {
         require(escrowBox.exists == true, 'Such Escrow does not exists');
         
         // before locked up

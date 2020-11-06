@@ -2,7 +2,7 @@
 # EscrowContract
 A smart contract with the ability to exchange one token against others.
 # Deploy
-when deploy it is need to pass parameters in to constructor than started new escrow mechanism
+when deploy it is need to pass parameters in to constructor than started new escrow mechanism<br/>
 Params:
 name  | type | description
 --|--|--
@@ -19,13 +19,13 @@ swapBackAfterEscrow|bool| if true,  participants can withdraw own deposited toke
 once installed will be use methods to exchange
 Note that contract accept tokens, it should be approve before
 
-### deposit
+### deposit<br/>
 Params:
 name  | type | description
 --|--|--
 tokens|address| address of token.
 
-### unlock
+### unlock<br/>
 Params:
 name  | type | description
 --|--|--
@@ -51,16 +51,16 @@ there are no parameters
 It is means that if participant#1 have address '0x1111...' and want to trade 100 tokens with address '0x2222...'
 than
 
-> participants=['0x1111...']
-tokens=['0x222...']
-minimums=[100]
+> participants=['0x1111...']<br/>
+tokens=['0x222...']<br/>
+minimums=[100]<br/>
 
 
 if will be added participant#2 with address '0x3333...' and want to trade 200 tokens with address '0x4444...'
 than
-> participants=['0x1111...','0x3333...']
-tokens=['0x222...','0x4444...']
-minimums=[100,200]
+> participants=['0x1111...','0x3333...']<br/>
+tokens=['0x222...','0x4444...']<br/>
+minimums=[100,200]<br/>
 
 and so on
 2. swapFrom/swapTo are combined and linked arrays with the same length too
