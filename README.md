@@ -1,8 +1,14 @@
-
 # EscrowContract
 A smart contract with the ability to exchange one token against others.
+
+
+# Installation
+### Node
+`npm install @openzeppelin/contracts-ethereum-package`
+
+
 # Deploy
-when deploy it is need to pass parameters in to constructor than started new escrow mechanism<br/>
+when deploy it is need to pass parameters in to init method that started new escrow mechanism<br/>
 Params:
 name  | type | description
 --|--|--

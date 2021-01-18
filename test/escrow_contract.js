@@ -41,12 +41,11 @@ contract('EscrowContract', (accounts) => {
     it('Escrow. Validate parameters. Method create', async () => {
         const Token2Instance = await ERC20Mintable.new('t2','t2');
         const Token3Instance = await ERC20Mintable.new('t3','t3');
-        var EscrowContractInstance;
+        var EscrowContractInstance =  await EscrowContractMock.new({ from: accountOne});
         
-        
-        
+            
         await truffleAssert.reverts(
-            EscrowContractInstance =  EscrowContractMock.new(
+            EscrowContractInstance.init(
                 [],// address[] memory participants,
                 [Token2Instance.address, Token3Instance.address],// address[] memory tokens,
                 [200,300],// uint256[] memory minimums,
@@ -61,7 +60,7 @@ contract('EscrowContract', (accounts) => {
         );
         
         await truffleAssert.reverts(
-            EscrowContractInstance =  EscrowContractMock.new(
+            EscrowContractInstance.init(
                 [accountTwo,accountThree],// address[] memory participants,
                 [],// address[] memory tokens,
                 [200,300],// uint256[] memory minimums,
@@ -76,7 +75,7 @@ contract('EscrowContract', (accounts) => {
         );
         
         await truffleAssert.reverts(
-            EscrowContractInstance =  EscrowContractMock.new(
+            EscrowContractInstance.init(
                 [accountTwo,accountThree],// address[] memory participants,
                 [Token2Instance.address, Token3Instance.address],// address[] memory tokens,
                 [],// uint256[] memory minimums,
@@ -91,7 +90,7 @@ contract('EscrowContract', (accounts) => {
         );
         
         await truffleAssert.reverts(
-            EscrowContractInstance =  EscrowContractMock.new(
+            EscrowContractInstance.init(
                 [accountTwo,accountThree],// address[] memory participants,
                 [Token2Instance.address, Token3Instance.address],// address[] memory tokens,
                 [200,300],// uint256[] memory minimums,
@@ -105,7 +104,7 @@ contract('EscrowContract', (accounts) => {
             "SwapFrom list can not be empty"
         );
         await truffleAssert.reverts(
-            EscrowContractInstance =  EscrowContractMock.new(
+            EscrowContractInstance.init(
                 [accountTwo,accountThree],// address[] memory participants,
                 [Token2Instance.address, Token3Instance.address],// address[] memory tokens,
                 [200,300],// uint256[] memory minimums,
@@ -119,7 +118,7 @@ contract('EscrowContract', (accounts) => {
             "SwapTo list can not be empty"
         );
         await truffleAssert.reverts(
-            EscrowContractInstance =  EscrowContractMock.new(
+            EscrowContractInstance.init(
                 [accountTwo,accountThree],// address[] memory participants,
                 [Token2Instance.address, Token3Instance.address],// address[] memory tokens,
                 [200,300],// uint256[] memory minimums,
@@ -134,7 +133,7 @@ contract('EscrowContract', (accounts) => {
         );
         
         await truffleAssert.reverts(
-            EscrowContractInstance =  EscrowContractMock.new(
+            EscrowContractInstance.init(
                 [accountOne,accountTwo,accountThree],// address[] memory participants,
                 [Token2Instance.address, Token3Instance.address],// address[] memory tokens,
                 [200,300,120,3230],// uint256[] memory minimums,
@@ -149,7 +148,7 @@ contract('EscrowContract', (accounts) => {
         );
         
         await truffleAssert.reverts(
-            EscrowContractInstance =  EscrowContractMock.new(
+            EscrowContractInstance.init(
                 [accountTwo,accountThree],// address[] memory participants,
                 [Token2Instance.address, Token3Instance.address],// address[] memory tokens,
                 [200,300],// uint256[] memory minimums,
@@ -174,7 +173,8 @@ contract('EscrowContract', (accounts) => {
         await Token2Instance.mint(accountTwo ,'0x'+(200*decimals).toString(16), { from: accountOne });
         await Token3Instance.mint(accountThree ,'0x'+(300*decimals).toString(16), { from: accountOne });
 
-        EscrowContractInstance = await EscrowContractMock.new(
+        EscrowContractInstance = await EscrowContractMock.new({ from: accountOne});
+        await EscrowContractInstance.init(
             [accountTwo,accountThree],// address[] memory participants,
             [Token2Instance.address, Token3Instance.address],// address[] memory tokens,
             [200,300],// uint256[] memory minimums,
@@ -204,7 +204,8 @@ contract('EscrowContract', (accounts) => {
         
         await Token2Instance.mint(accountFourth ,'0x'+(200*decimals).toString(16), { from: accountOne });
 
-        EscrowContractInstance = await EscrowContractMock.new(
+        EscrowContractInstance = await EscrowContractMock.new({ from: accountOne});
+        await EscrowContractInstance.init(
             [accountTwo,accountThree],// address[] memory participants,
             [Token2Instance.address, Token3Instance.address],// address[] memory tokens,
             [200,300],// uint256[] memory minimums,
@@ -230,7 +231,8 @@ contract('EscrowContract', (accounts) => {
         
         await Token4Instance.mint(accountTwo ,'0x'+(200*decimals).toString(16), { from: accountOne });
 
-        EscrowContractInstance = await EscrowContractMock.new(
+        EscrowContractInstance = await EscrowContractMock.new({ from: accountOne});
+        await EscrowContractInstance.init(
             [accountTwo,accountThree],// address[] memory participants,
             [Token2Instance.address, Token3Instance.address],// address[] memory tokens,
             [200,300],// uint256[] memory minimums,
@@ -256,7 +258,8 @@ contract('EscrowContract', (accounts) => {
         await Token2Instance.mint(accountTwo ,'0x'+(200*decimals).toString(16), { from: accountOne });
         await Token3Instance.mint(accountThree ,'0x'+(300*decimals).toString(16), { from: accountOne });
         
-        EscrowContractInstance = await EscrowContractMock.new(
+        EscrowContractInstance = await EscrowContractMock.new({ from: accountOne});
+        await EscrowContractInstance.init(
             [accountTwo,accountThree],// address[] memory participants,
             [Token2Instance.address, Token3Instance.address],// address[] memory tokens,
             [200,300],// uint256[] memory minimums,
@@ -281,7 +284,8 @@ contract('EscrowContract', (accounts) => {
         await Token2Instance.mint(accountTwo ,'0x'+(200*decimals).toString(16), { from: accountOne });
         await Token3Instance.mint(accountThree ,'0x'+(300*decimals).toString(16), { from: accountOne });
         
-        EscrowContractInstance = await EscrowContractMock.new(
+        EscrowContractInstance = await EscrowContractMock.new({ from: accountOne});
+        await EscrowContractInstance.init(
             [accountTwo,accountThree],// address[] memory participants,
             [Token2Instance.address, Token3Instance.address],// address[] memory tokens,
             [200,300],// uint256[] memory minimums,
@@ -309,7 +313,8 @@ contract('EscrowContract', (accounts) => {
         await Token2Instance.mint(accountTwo ,'0x'+(200*decimals).toString(16), { from: accountOne });
         await Token3Instance.mint(accountThree ,'0x'+(300*decimals).toString(16), { from: accountOne });
         
-        EscrowContractInstance = await EscrowContractMock.new(
+        EscrowContractInstance = await EscrowContractMock.new({ from: accountOne});
+        await EscrowContractInstance.init(
             [accountTwo,accountThree],// address[] memory participants,
             [Token2Instance.address, Token3Instance.address],// address[] memory tokens,
             [200,300],// uint256[] memory minimums,
@@ -349,7 +354,8 @@ contract('EscrowContract', (accounts) => {
         await Token3Instance.mint(accountThree ,'0x'+(300*decimals).toString(16), { from: accountOne });
         await Token3Instance.mint(accountFive ,'0x'+(300*decimals).toString(16), { from: accountOne });
         
-        EscrowContractInstance = await EscrowContractMock.new(
+        EscrowContractInstance = await EscrowContractMock.new({ from: accountOne});
+        await EscrowContractInstance.init(
             [accountTwo,accountThree],// address[] memory participants,
             [Token2Instance.address, Token3Instance.address],// address[] memory tokens,
             [200,300],// uint256[] memory minimums,
@@ -380,7 +386,8 @@ contract('EscrowContract', (accounts) => {
         await Token2Instance.mint(accountTwo ,'0x'+(200*decimals).toString(16), { from: accountOne });
         await Token3Instance.mint(accountThree ,'0x'+(300*decimals).toString(16), { from: accountOne });
         
-        EscrowContractInstance = await EscrowContractMock.new(
+        EscrowContractInstance = await EscrowContractMock.new({ from: accountOne});
+        await EscrowContractInstance.init(
             [accountTwo,accountThree],// address[] memory participants,
             [Token2Instance.address, Token3Instance.address],// address[] memory tokens,
             [200,300],// uint256[] memory minimums,
@@ -411,7 +418,8 @@ contract('EscrowContract', (accounts) => {
         await Token2Instance.mint(accountTwo ,'0x'+(200*decimals).toString(16), { from: accountOne });
         await Token3Instance.mint(accountThree ,'0x'+(300*decimals).toString(16), { from: accountOne });
         
-        EscrowContractInstance = await EscrowContractMock.new( 
+        EscrowContractInstance = await EscrowContractMock.new({ from: accountOne});
+        await EscrowContractInstance.init(
             [accountTwo,accountThree, accountFourth],// address[] memory participants,
             [Token2Instance.address, Token3Instance.address, Token3Instance.address],// address[] memory tokens,
             [200,300,100],// uint256[] memory minimums,
@@ -446,7 +454,8 @@ contract('EscrowContract', (accounts) => {
         const accountTwoToken2Balance = (await Token2Instance.balanceOf(accountTwo));
         const accountThreeToken3Balance = (await Token3Instance.balanceOf(accountThree));
         
-        EscrowContractInstance = await EscrowContractMock.new(
+        EscrowContractInstance = await EscrowContractMock.new({ from: accountOne});
+        await EscrowContractInstance.init(
             [accountTwo,accountThree],// address[] memory participants,
             [Token2Instance.address, Token3Instance.address],// address[] memory tokens,
             [200,300],// uint256[] memory minimums,
@@ -503,7 +512,8 @@ contract('EscrowContract', (accounts) => {
         const accountTwoToken2Balance = (await Token2Instance.balanceOf(accountTwo));
         const accountThreeToken3Balance = (await Token3Instance.balanceOf(accountThree));
         
-        EscrowContractInstance = await EscrowContractMock.new(
+        EscrowContractInstance = await EscrowContractMock.new({ from: accountOne});
+        await EscrowContractInstance.init(
             [accountTwo,accountThree],// address[] memory participants,
             [Token2Instance.address, Token3Instance.address],// address[] memory tokens,
             [200,300],// uint256[] memory minimums,
@@ -562,7 +572,8 @@ contract('EscrowContract', (accounts) => {
         const accountTwoToken2Balance = (await Token2Instance.balanceOf(accountTwo));
         const accountThreeToken3Balance = (await Token3Instance.balanceOf(accountThree));
         
-        EscrowContractInstance = await EscrowContractMock.new( 
+        EscrowContractInstance = await EscrowContractMock.new({ from: accountOne});
+        await EscrowContractInstance.init(
             [accountTwo,accountThree],// address[] memory participants,
             [Token2Instance.address, Token3Instance.address],// address[] memory tokens,
             [200,300],// uint256[] memory minimums,
@@ -638,7 +649,8 @@ contract('EscrowContract', (accounts) => {
         const accountTwoToken2Balance = (await Token2Instance.balanceOf(accountTwo));
         const accountThreeToken3Balance = (await Token3Instance.balanceOf(accountThree));
         
-        EscrowContractInstance = await EscrowContractMock.new( 
+        EscrowContractInstance = await EscrowContractMock.new({ from: accountOne});
+        await EscrowContractInstance.init(
             [accountTwo,accountThree],// address[] memory participants,
             [Token2Instance.address, Token3Instance.address],// address[] memory tokens,
             [200,300],// uint256[] memory minimums,
@@ -715,7 +727,8 @@ contract('EscrowContract', (accounts) => {
         await Token2Instance.mint(accountFourth ,'0x'+(200*decimals).toString(16), { from: accountOne });
         await Token3Instance.mint(accountFive ,'0x'+(300*decimals).toString(16), { from: accountOne });
     
-        EscrowContractInstance = await EscrowContractMock.new(
+        EscrowContractInstance = await EscrowContractMock.new({ from: accountOne});
+        await EscrowContractInstance.init(
             [accountTwo,accountThree,accountFourth,accountFive],// address[] memory participants,
             [Token2Instance.address, Token3Instance.address,Token2Instance.address, Token3Instance.address],// address[] memory tokens,
             [200,300,200,300],// uint256[] memory minimums,
@@ -805,7 +818,8 @@ contract('EscrowContract', (accounts) => {
 
         const accountTwoToken2Balance = (await Token2Instance.balanceOf(accountTwo));
 
-        EscrowContractInstance = await EscrowContractMock.new(
+        EscrowContractInstance = await EscrowContractMock.new({ from: accountOne});
+        await EscrowContractInstance.init(
             [accountTwo],// address[] memory participants,
             [Token2Instance.address],// address[] memory tokens,
             [200],// uint256[] memory minimums,

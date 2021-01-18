@@ -1,15 +1,16 @@
 pragma solidity >=0.6.0 <0.7.0;
 pragma experimental ABIEncoderV2;
 
-import "./openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
-import "./openzeppelin-contracts/contracts/utils/EnumerableMap.sol";
-import "./openzeppelin-contracts/contracts/utils/EnumerableSet.sol";
-import "./openzeppelin-contracts/contracts/access/Ownable.sol";
-import "./openzeppelin-contracts/contracts/math/SafeMath.sol";
-import "./openzeppelin-contracts/contracts/utils/Address.sol";
-import "./openzeppelin-contracts/contracts/utils/ReentrancyGuard.sol";
+import "@openzeppelin/contracts-ethereum-package/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts-ethereum-package/contracts/utils/EnumerableMap.sol";
+import "@openzeppelin/contracts-ethereum-package/contracts/utils/EnumerableSet.sol";
+import "@openzeppelin/contracts-ethereum-package/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts-ethereum-package/contracts/math/SafeMath.sol";
+import "@openzeppelin/contracts-ethereum-package/contracts/utils/Address.sol";
+import "@openzeppelin/contracts-ethereum-package/contracts/utils/ReentrancyGuard.sol";
+import "./IntercoinTrait.sol";
 
-contract EscrowContract is Ownable, ReentrancyGuard {
+contract EscrowContract is Initializable, OwnableUpgradeSafe, ReentrancyGuardUpgradeSafe, IntercoinTrait {
     
     using SafeMath for uint256;
     using Address for address;
@@ -65,7 +66,7 @@ contract EscrowContract is Ownable, ReentrancyGuard {
      * @param swapTo array of participants which resources swap to
      * @param swapBackAfterEscrow if true, then: if withdraw is called after lock expired, and boxes still contain something, then SWAP BACK (swapTo->swapFrom) left resources
      */
-    constructor (
+    function init(
         address[] memory participants,
         address[] memory tokens,
         uint256[] memory minimums,
@@ -76,7 +77,10 @@ contract EscrowContract is Ownable, ReentrancyGuard {
         bool swapBackAfterEscrow
     ) 
         public 
+        initializer 
     {
+        __Ownable_init();
+        __ReentrancyGuard_init();
         
         emit EscrowCreated(_msgSender());
         
