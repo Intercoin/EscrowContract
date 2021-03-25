@@ -1,4 +1,4 @@
-const BN = require('bn.js'); // https://github.com/indutny/bn.js
+const BigNumber = require('bignumber.js');
 const util = require('util');
 const EscrowContract = artifacts.require("EscrowContract");
 const EscrowContractMock = artifacts.require("EscrowContractMock");
@@ -170,8 +170,8 @@ contract('EscrowContract', (accounts) => {
         const Token3Instance = await ERC20Mintable.new('t3','t3');
         var EscrowContractInstance;
         
-        await Token2Instance.mint(accountTwo ,'0x'+(200*decimals).toString(16), { from: accountOne });
-        await Token3Instance.mint(accountThree ,'0x'+(300*decimals).toString(16), { from: accountOne });
+        await Token2Instance.mint(accountTwo ,'0x'+BigNumber(200*decimals).toString(16), { from: accountOne });
+        await Token3Instance.mint(accountThree ,'0x'+BigNumber(300*decimals).toString(16), { from: accountOne });
 
         EscrowContractInstance = await EscrowContractMock.new({ from: accountOne});
         await EscrowContractInstance.init(
@@ -187,10 +187,10 @@ contract('EscrowContract', (accounts) => {
         
         
 
-        await Token2Instance.approve(EscrowContractInstance.address,'0x'+(200*decimals).toString(16), { from: accountTwo });
+        await Token2Instance.approve(EscrowContractInstance.address,'0x'+BigNumber(200*decimals).toString(16), { from: accountTwo });
         await EscrowContractInstance.deposit(Token2Instance.address, { from: accountTwo });
         
-        await Token3Instance.approve(EscrowContractInstance.address,'0x'+(300*decimals).toString(16), { from: accountThree });
+        await Token3Instance.approve(EscrowContractInstance.address,'0x'+BigNumber(300*decimals).toString(16), { from: accountThree });
         await truffleAssert.reverts(
             EscrowContractInstance.deposit(Token3Instance.address, { from: accountThree }),
             "Such Escrow have already locked up"
@@ -216,7 +216,7 @@ contract('EscrowContract', (accounts) => {
             false// bool swapBackAfterEscrow
         , { from: accountOne});
         
-        await Token3Instance.approve(EscrowContractInstance.address,'0x'+(300*decimals).toString(16), { from: accountFourth });
+        await Token3Instance.approve(EscrowContractInstance.address,'0x'+BigNumber(300*decimals).toString(16), { from: accountFourth });
         await truffleAssert.reverts(
             EscrowContractInstance.deposit(Token2Instance.address, { from: accountFourth }),
             "Such participant does not exists in this escrow"
@@ -229,7 +229,7 @@ contract('EscrowContract', (accounts) => {
         const Token4Instance = await ERC20Mintable.new('t4','t4');
         var EscrowContractInstance;
         
-        await Token4Instance.mint(accountTwo ,'0x'+(200*decimals).toString(16), { from: accountOne });
+        await Token4Instance.mint(accountTwo ,'0x'+BigNumber(200*decimals).toString(16), { from: accountOne });
 
         EscrowContractInstance = await EscrowContractMock.new({ from: accountOne});
         await EscrowContractInstance.init(
@@ -243,7 +243,7 @@ contract('EscrowContract', (accounts) => {
             false// bool swapBackAfterEscrow
         , { from: accountOne});
         
-        await Token4Instance.approve(EscrowContractInstance.address,'0x'+(300*decimals).toString(16), { from: accountTwo });
+        await Token4Instance.approve(EscrowContractInstance.address,'0x'+BigNumber(300*decimals).toString(16), { from: accountTwo });
         await truffleAssert.reverts(
             EscrowContractInstance.deposit(Token4Instance.address, { from: accountTwo }),
             "Such token does not exists for this participant"
@@ -255,8 +255,8 @@ contract('EscrowContract', (accounts) => {
         const Token3Instance = await ERC20Mintable.new('t3','t3');
         var EscrowContractInstance;
         
-        await Token2Instance.mint(accountTwo ,'0x'+(200*decimals).toString(16), { from: accountOne });
-        await Token3Instance.mint(accountThree ,'0x'+(300*decimals).toString(16), { from: accountOne });
+        await Token2Instance.mint(accountTwo ,'0x'+BigNumber(200*decimals).toString(16), { from: accountOne });
+        await Token3Instance.mint(accountThree ,'0x'+BigNumber(300*decimals).toString(16), { from: accountOne });
         
         EscrowContractInstance = await EscrowContractMock.new({ from: accountOne});
         await EscrowContractInstance.init(
@@ -281,8 +281,8 @@ contract('EscrowContract', (accounts) => {
         const Token3Instance = await ERC20Mintable.new('t3','t3');
         var EscrowContractInstance;
         
-        await Token2Instance.mint(accountTwo ,'0x'+(200*decimals).toString(16), { from: accountOne });
-        await Token3Instance.mint(accountThree ,'0x'+(300*decimals).toString(16), { from: accountOne });
+        await Token2Instance.mint(accountTwo ,'0x'+BigNumber(200*decimals).toString(16), { from: accountOne });
+        await Token3Instance.mint(accountThree ,'0x'+BigNumber(300*decimals).toString(16), { from: accountOne });
         
         EscrowContractInstance = await EscrowContractMock.new({ from: accountOne});
         await EscrowContractInstance.init(
@@ -296,7 +296,7 @@ contract('EscrowContract', (accounts) => {
             false// bool swapBackAfterEscrow
         , { from: accountOne});
         
-        await Token2Instance.approve(EscrowContractInstance.address,'0x'+(200*decimals).toString(16), { from: accountTwo });
+        await Token2Instance.approve(EscrowContractInstance.address,'0x'+BigNumber(200*decimals).toString(16), { from: accountTwo });
         await EscrowContractInstance.deposit(Token2Instance.address, { from: accountTwo });
         
         await truffleAssert.reverts(
@@ -310,8 +310,8 @@ contract('EscrowContract', (accounts) => {
         const Token3Instance = await ERC20Mintable.new('t3','t3');
         var EscrowContractInstance;
         
-        await Token2Instance.mint(accountTwo ,'0x'+(200*decimals).toString(16), { from: accountOne });
-        await Token3Instance.mint(accountThree ,'0x'+(300*decimals).toString(16), { from: accountOne });
+        await Token2Instance.mint(accountTwo ,'0x'+BigNumber(200*decimals).toString(16), { from: accountOne });
+        await Token3Instance.mint(accountThree ,'0x'+BigNumber(300*decimals).toString(16), { from: accountOne });
         
         EscrowContractInstance = await EscrowContractMock.new({ from: accountOne});
         await EscrowContractInstance.init(
@@ -325,21 +325,21 @@ contract('EscrowContract', (accounts) => {
             false// bool swapBackAfterEscrow
         , { from: accountOne});
         
-        await Token2Instance.approve(EscrowContractInstance.address,'0x'+(200*decimals).toString(16), { from: accountTwo });
+        await Token2Instance.approve(EscrowContractInstance.address,'0x'+BigNumber(200*decimals).toString(16), { from: accountTwo });
         await EscrowContractInstance.deposit(Token2Instance.address, { from: accountTwo });
         
-        await Token3Instance.approve(EscrowContractInstance.address,'0x'+(300*decimals).toString(16), { from: accountThree });
+        await Token3Instance.approve(EscrowContractInstance.address,'0x'+BigNumber(300*decimals).toString(16), { from: accountThree });
         await EscrowContractInstance.deposit(Token3Instance.address, { from: accountThree });
         
         // now locked
         
         await truffleAssert.reverts(
-            EscrowContractInstance.unlock( accountFourth, Token3Instance.address, '0x'+(300*decimals).toString(16), { from: accountTwo }),
+            EscrowContractInstance.unlock( accountFourth, Token3Instance.address, '0x'+BigNumber(300*decimals).toString(16), { from: accountTwo }),
             "Such participant is not exists via recipient"
         );
         // and try to send to recipient from another pair
         await truffleAssert.reverts(
-            EscrowContractInstance.unlock( accountFourth, Token3Instance.address, '0x'+(300*decimals).toString(16), { from: accountTwo }),
+            EscrowContractInstance.unlock( accountFourth, Token3Instance.address, '0x'+BigNumber(300*decimals).toString(16), { from: accountTwo }),
             "Such participant is not exists via recipient"
         );
         
@@ -350,9 +350,9 @@ contract('EscrowContract', (accounts) => {
         const Token3Instance = await ERC20Mintable.new('t3','t3');
         var EscrowContractInstance;
         
-        await Token2Instance.mint(accountTwo ,'0x'+(200*decimals).toString(16), { from: accountOne });
-        await Token3Instance.mint(accountThree ,'0x'+(300*decimals).toString(16), { from: accountOne });
-        await Token3Instance.mint(accountFive ,'0x'+(300*decimals).toString(16), { from: accountOne });
+        await Token2Instance.mint(accountTwo ,'0x'+BigNumber(200*decimals).toString(16), { from: accountOne });
+        await Token3Instance.mint(accountThree ,'0x'+BigNumber(300*decimals).toString(16), { from: accountOne });
+        await Token3Instance.mint(accountFive ,'0x'+BigNumber(300*decimals).toString(16), { from: accountOne });
         
         EscrowContractInstance = await EscrowContractMock.new({ from: accountOne});
         await EscrowContractInstance.init(
@@ -366,10 +366,10 @@ contract('EscrowContract', (accounts) => {
             false// bool swapBackAfterEscrow
         , { from: accountOne});
         
-        await Token2Instance.approve(EscrowContractInstance.address,'0x'+(200*decimals).toString(16), { from: accountTwo });
+        await Token2Instance.approve(EscrowContractInstance.address,'0x'+BigNumber(200*decimals).toString(16), { from: accountTwo });
         await EscrowContractInstance.deposit(Token2Instance.address, { from: accountTwo });
         
-        await Token3Instance.approve(EscrowContractInstance.address,'0x'+(300*decimals).toString(16), { from: accountThree });
+        await Token3Instance.approve(EscrowContractInstance.address,'0x'+BigNumber(300*decimals).toString(16), { from: accountThree });
         await EscrowContractInstance.deposit(Token3Instance.address, { from: accountThree });
         
         await truffleAssert.reverts(
@@ -383,8 +383,8 @@ contract('EscrowContract', (accounts) => {
         const Token3Instance = await ERC20Mintable.new('t3','t3');
         var EscrowContractInstance;
         
-        await Token2Instance.mint(accountTwo ,'0x'+(200*decimals).toString(16), { from: accountOne });
-        await Token3Instance.mint(accountThree ,'0x'+(300*decimals).toString(16), { from: accountOne });
+        await Token2Instance.mint(accountTwo ,'0x'+BigNumber(200*decimals).toString(16), { from: accountOne });
+        await Token3Instance.mint(accountThree ,'0x'+BigNumber(300*decimals).toString(16), { from: accountOne });
         
         EscrowContractInstance = await EscrowContractMock.new({ from: accountOne});
         await EscrowContractInstance.init(
@@ -398,10 +398,10 @@ contract('EscrowContract', (accounts) => {
             false// bool swapBackAfterEscrow
         , { from: accountOne});
         
-        await Token2Instance.approve(EscrowContractInstance.address,'0x'+(200*decimals).toString(16), { from: accountTwo });
+        await Token2Instance.approve(EscrowContractInstance.address,'0x'+BigNumber(200*decimals).toString(16), { from: accountTwo });
         await EscrowContractInstance.deposit(Token2Instance.address, { from: accountTwo });
         
-        await Token3Instance.approve(EscrowContractInstance.address,'0x'+(300*decimals).toString(16), { from: accountThree });
+        await Token3Instance.approve(EscrowContractInstance.address,'0x'+BigNumber(300*decimals).toString(16), { from: accountThree });
         await EscrowContractInstance.deposit(Token3Instance.address, { from: accountThree });
         
         await truffleAssert.reverts(
@@ -415,8 +415,8 @@ contract('EscrowContract', (accounts) => {
         const Token3Instance = await ERC20Mintable.new('t3','t3');
         var EscrowContractInstance;
         
-        await Token2Instance.mint(accountTwo ,'0x'+(200*decimals).toString(16), { from: accountOne });
-        await Token3Instance.mint(accountThree ,'0x'+(300*decimals).toString(16), { from: accountOne });
+        await Token2Instance.mint(accountTwo ,'0x'+BigNumber(200*decimals).toString(16), { from: accountOne });
+        await Token3Instance.mint(accountThree ,'0x'+BigNumber(300*decimals).toString(16), { from: accountOne });
         
         EscrowContractInstance = await EscrowContractMock.new({ from: accountOne});
         await EscrowContractInstance.init(
@@ -430,10 +430,10 @@ contract('EscrowContract', (accounts) => {
             false// bool swapBackAfterEscrow
         , { from: accountOne});
         
-        await Token2Instance.approve(EscrowContractInstance.address,'0x'+(200*decimals).toString(16), { from: accountTwo });
+        await Token2Instance.approve(EscrowContractInstance.address,'0x'+BigNumber(200*decimals).toString(16), { from: accountTwo });
         await EscrowContractInstance.deposit(Token2Instance.address, { from: accountTwo });
         
-        await Token3Instance.approve(EscrowContractInstance.address,'0x'+(300*decimals).toString(16), { from: accountThree });
+        await Token3Instance.approve(EscrowContractInstance.address,'0x'+BigNumber(300*decimals).toString(16), { from: accountThree });
         await EscrowContractInstance.deposit(Token3Instance.address, { from: accountThree });
         
         await truffleAssert.reverts(
@@ -448,8 +448,8 @@ contract('EscrowContract', (accounts) => {
         const Token3Instance = await ERC20Mintable.new('t3','t3');
         var EscrowContractInstance;
         
-        await Token2Instance.mint(accountTwo ,'0x'+(200*decimals).toString(16), { from: accountOne });
-        await Token3Instance.mint(accountThree ,'0x'+(300*decimals).toString(16), { from: accountOne });
+        await Token2Instance.mint(accountTwo ,'0x'+BigNumber(200*decimals).toString(16), { from: accountOne });
+        await Token3Instance.mint(accountThree ,'0x'+BigNumber(300*decimals).toString(16), { from: accountOne });
     
         const accountTwoToken2Balance = (await Token2Instance.balanceOf(accountTwo));
         const accountThreeToken3Balance = (await Token3Instance.balanceOf(accountThree));
@@ -466,19 +466,19 @@ contract('EscrowContract', (accounts) => {
             false// bool swapBackAfterEscrow
         , { from: accountOne});
         
-        await Token2Instance.approve(EscrowContractInstance.address,'0x'+(200*decimals).toString(16), { from: accountTwo });
+        await Token2Instance.approve(EscrowContractInstance.address,'0x'+BigNumber(200*decimals).toString(16), { from: accountTwo });
         await EscrowContractInstance.deposit(Token2Instance.address, { from: accountTwo });
       
         
-        await Token3Instance.approve(EscrowContractInstance.address,'0x'+(300*decimals).toString(16), { from: accountThree });
+        await Token3Instance.approve(EscrowContractInstance.address,'0x'+BigNumber(300*decimals).toString(16), { from: accountThree });
         await EscrowContractInstance.deposit(Token3Instance.address, { from: accountThree });
       
         // now locked
         
         
         // trying to unlock
-        await EscrowContractInstance.unlock( accountThree, Token2Instance.address, '0x'+(200*decimals).toString(16), {from: accountTwo});
-        await EscrowContractInstance.unlock( accountTwo, Token3Instance.address, '0x'+(300*decimals).toString(16), {from: accountThree});
+        await EscrowContractInstance.unlock( accountThree, Token2Instance.address, '0x'+BigNumber(200*decimals).toString(16), {from: accountTwo});
+        await EscrowContractInstance.unlock( accountTwo, Token3Instance.address, '0x'+BigNumber(300*decimals).toString(16), {from: accountThree});
         
         // withdraw
         await EscrowContractInstance.withdraw( {from: accountTwo});
@@ -488,14 +488,14 @@ contract('EscrowContract', (accounts) => {
         const accountThreeEndingToken2Balance = (await Token2Instance.balanceOf(accountThree));
       
         assert.equal(
-            (new BN(accountTwoEndingToken3Balance,10)).toString(16), 
-            (new BN(accountThreeToken3Balance,10)).toString(16), 
+            BigNumber(accountTwoEndingToken3Balance).toString(16), 
+            BigNumber(accountThreeToken3Balance).toString(16), 
             'Wrong balance after swap for accountTwo'
         );
 
         assert.equal(
-            (new BN(accountThreeEndingToken2Balance,10)).toString(16), 
-            (new BN(accountTwoToken2Balance,10)).toString(16), 
+            BigNumber(accountThreeEndingToken2Balance).toString(16), 
+            BigNumber(accountTwoToken2Balance).toString(16), 
             'Wrong balance after swap for accountThree'
         );
         
@@ -506,8 +506,8 @@ contract('EscrowContract', (accounts) => {
         const Token3Instance = await ERC20Mintable.new('t3','t3');
         var EscrowContractInstance;
         
-        await Token2Instance.mint(accountTwo ,'0x'+(200*decimals).toString(16), { from: accountOne });
-        await Token3Instance.mint(accountThree ,'0x'+(300*decimals).toString(16), { from: accountOne });
+        await Token2Instance.mint(accountTwo ,'0x'+BigNumber(200*decimals).toString(16), { from: accountOne });
+        await Token3Instance.mint(accountThree ,'0x'+BigNumber(300*decimals).toString(16), { from: accountOne });
     
         const accountTwoToken2Balance = (await Token2Instance.balanceOf(accountTwo));
         const accountThreeToken3Balance = (await Token3Instance.balanceOf(accountThree));
@@ -524,19 +524,19 @@ contract('EscrowContract', (accounts) => {
             false// bool swapBackAfterEscrow
         , { from: accountOne});
         
-        await Token2Instance.approve(EscrowContractInstance.address,'0x'+(200*decimals).toString(16), { from: accountTwo });
+        await Token2Instance.approve(EscrowContractInstance.address,'0x'+BigNumber(200*decimals).toString(16), { from: accountTwo });
         await EscrowContractInstance.deposit(Token2Instance.address, { from: accountTwo });
       
         
-        await Token3Instance.approve(EscrowContractInstance.address,'0x'+(300*decimals).toString(16), { from: accountThree });
+        await Token3Instance.approve(EscrowContractInstance.address,'0x'+BigNumber(300*decimals).toString(16), { from: accountThree });
         await EscrowContractInstance.deposit(Token3Instance.address, { from: accountThree });
       
         // now locked
         
         
         // trying to unlock
-        await EscrowContractInstance.unlock( accountThree, Token2Instance.address, '0x'+(200*decimals).toString(16), {from: accountTwo});
-        await EscrowContractInstance.unlock( accountTwo, Token3Instance.address, '0x'+(300*decimals).toString(16), {from: accountThree});
+        await EscrowContractInstance.unlock( accountThree, Token2Instance.address, '0x'+BigNumber(200*decimals).toString(16), {from: accountTwo});
+        await EscrowContractInstance.unlock( accountTwo, Token3Instance.address, '0x'+BigNumber(300*decimals).toString(16), {from: accountThree});
         
         // pass 100 seconds. 
         await helper.advanceTime(100);
@@ -549,14 +549,14 @@ contract('EscrowContract', (accounts) => {
         const accountThreeEndingToken2Balance = (await Token2Instance.balanceOf(accountThree));
       
         assert.equal(
-            (new BN(accountTwoEndingToken3Balance,10)).toString(16), 
-            (new BN(accountThreeToken3Balance,10)).toString(16), 
+            BigNumber(accountTwoEndingToken3Balance).toString(16), 
+            BigNumber(accountThreeToken3Balance).toString(16), 
             'Wrong balance after swap for accountTwo'
         );
 
         assert.equal(
-            (new BN(accountThreeEndingToken2Balance,10)).toString(16), 
-            (new BN(accountTwoToken2Balance,10)).toString(16), 
+            BigNumber(accountThreeEndingToken2Balance).toString(16), 
+            BigNumber(accountTwoToken2Balance).toString(16), 
             'Wrong balance after swap for accountThree'
         );
     });
@@ -566,8 +566,8 @@ contract('EscrowContract', (accounts) => {
         const Token3Instance = await ERC20Mintable.new('t3','t3');
         var EscrowContractInstance;
         
-        await Token2Instance.mint(accountTwo ,'0x'+(200*decimals).toString(16), { from: accountOne });
-        await Token3Instance.mint(accountThree ,'0x'+(300*decimals).toString(16), { from: accountOne });
+        await Token2Instance.mint(accountTwo ,'0x'+BigNumber(200*decimals).toString(16), { from: accountOne });
+        await Token3Instance.mint(accountThree ,'0x'+BigNumber(300*decimals).toString(16), { from: accountOne });
     
         const accountTwoToken2Balance = (await Token2Instance.balanceOf(accountTwo));
         const accountThreeToken3Balance = (await Token3Instance.balanceOf(accountThree));
@@ -584,19 +584,19 @@ contract('EscrowContract', (accounts) => {
             true// bool swapBackAfterEscrow
         , { from: accountOne});
         
-        await Token2Instance.approve(EscrowContractInstance.address,'0x'+(200*decimals).toString(16), { from: accountTwo });
+        await Token2Instance.approve(EscrowContractInstance.address,'0x'+BigNumber(200*decimals).toString(16), { from: accountTwo });
         await EscrowContractInstance.deposit(Token2Instance.address, { from: accountTwo });
       
         
-        await Token3Instance.approve(EscrowContractInstance.address,'0x'+(300*decimals).toString(16), { from: accountThree });
+        await Token3Instance.approve(EscrowContractInstance.address,'0x'+BigNumber(300*decimals).toString(16), { from: accountThree });
         await EscrowContractInstance.deposit(Token3Instance.address, { from: accountThree });
       
         // now locked
         
         
         // trying to unlock
-        await EscrowContractInstance.unlock( accountThree, Token2Instance.address, '0x'+(150*decimals).toString(16), {from: accountTwo});
-        await EscrowContractInstance.unlock( accountTwo, Token3Instance.address, '0x'+(150*decimals).toString(16), {from: accountThree});
+        await EscrowContractInstance.unlock( accountThree, Token2Instance.address, '0x'+BigNumber(150*decimals).toString(16), {from: accountTwo});
+        await EscrowContractInstance.unlock( accountTwo, Token3Instance.address, '0x'+BigNumber(150*decimals).toString(16), {from: accountThree});
       
         // pass 100 seconds. 
         await helper.advanceTime(100);
@@ -613,27 +613,27 @@ contract('EscrowContract', (accounts) => {
         
         // after swap
         assert.equal(
-            (new BN(accountTwoEndingToken3Balance,10)).toString(16), 
-            (150*decimals).toString(16),
+            BigNumber(accountTwoEndingToken3Balance).toString(16), 
+            BigNumber(150*decimals).toString(16),
             'Wrong balance after swap for accountTwo'
         );
 
         assert.equal(
-            (new BN(accountThreeEndingToken2Balance,10)).toString(16), 
-            (150*decimals).toString(16),
+            BigNumber(accountThreeEndingToken2Balance).toString(16), 
+            BigNumber(150*decimals).toString(16),
             'Wrong balance after swap for accountThree'
         );
         
         // left after withdraw own
         assert.equal(
-            (new BN(accountTwoEndingToken2Balance,10)).toString(16), 
-            ((200-150)*decimals).toString(16),
+            BigNumber(accountTwoEndingToken2Balance).toString(16), 
+            BigNumber((200-150)*decimals).toString(16),
             'Wrong balance after swap for accountTwo'
         );
 
         assert.equal(
-            (new BN(accountThreeEndingToken3Balance,10)).toString(16), 
-            ((300-150)*decimals).toString(16),
+            BigNumber(accountThreeEndingToken3Balance).toString(16), 
+            BigNumber((300-150)*decimals).toString(16),
             'Wrong balance after swap for accountThree'
         );
     });
@@ -643,8 +643,8 @@ contract('EscrowContract', (accounts) => {
         const Token3Instance = await ERC20Mintable.new('t3','t3');
         var EscrowContractInstance;
         
-        await Token2Instance.mint(accountTwo ,'0x'+(200*decimals).toString(16), { from: accountOne });
-        await Token3Instance.mint(accountThree ,'0x'+(300*decimals).toString(16), { from: accountOne });
+        await Token2Instance.mint(accountTwo ,'0x'+BigNumber(200*decimals).toString(16), { from: accountOne });
+        await Token3Instance.mint(accountThree ,'0x'+BigNumber(300*decimals).toString(16), { from: accountOne });
     
         const accountTwoToken2Balance = (await Token2Instance.balanceOf(accountTwo));
         const accountThreeToken3Balance = (await Token3Instance.balanceOf(accountThree));
@@ -661,19 +661,19 @@ contract('EscrowContract', (accounts) => {
             true// bool swapBackAfterEscrow
         , { from: accountOne});
         
-        await Token2Instance.approve(EscrowContractInstance.address,'0x'+(200*decimals).toString(16), { from: accountTwo });
+        await Token2Instance.approve(EscrowContractInstance.address,'0x'+BigNumber(200*decimals).toString(16), { from: accountTwo });
         await EscrowContractInstance.deposit(Token2Instance.address, { from: accountTwo });
       
         
-        await Token3Instance.approve(EscrowContractInstance.address,'0x'+(300*decimals).toString(16), { from: accountThree });
+        await Token3Instance.approve(EscrowContractInstance.address,'0x'+BigNumber(300*decimals).toString(16), { from: accountThree });
         await EscrowContractInstance.deposit(Token3Instance.address, { from: accountThree });
       
         // now locked
         
         
         // trying to unlock
-        await EscrowContractInstance.unlock( accountThree, Token2Instance.address, '0x'+(150*decimals).toString(16), {from: accountTwo});
-        await EscrowContractInstance.unlock( accountTwo, Token3Instance.address, '0x'+(150*decimals).toString(16), {from: accountThree});
+        await EscrowContractInstance.unlock( accountThree, Token2Instance.address, '0x'+BigNumber(150*decimals).toString(16), {from: accountTwo});
+        await EscrowContractInstance.unlock( accountTwo, Token3Instance.address, '0x'+BigNumber(150*decimals).toString(16), {from: accountThree});
         
         // pass 100 seconds. 
         await helper.advanceTime(100);
@@ -690,27 +690,27 @@ contract('EscrowContract', (accounts) => {
         
         // after swap
         assert.equal(
-            (new BN(accountTwoEndingToken3Balance,10)).toString(16), 
-            (150*decimals).toString(16),
+            BigNumber(accountTwoEndingToken3Balance).toString(16), 
+            BigNumber(150*decimals).toString(16),
             'Wrong balance after swap for accountTwo'
         );
 
         assert.equal(
-            (new BN(accountThreeEndingToken2Balance,10)).toString(16), 
-            (150*decimals).toString(16),
+            BigNumber(accountThreeEndingToken2Balance).toString(16), 
+            BigNumber(150*decimals).toString(16),
             'Wrong balance after swap for accountThree'
         );
         
         // left after withdraw own
         assert.equal(
-            (new BN(accountTwoEndingToken2Balance,10)).toString(16), 
-            ((200-150)*decimals).toString(16),
+            BigNumber(accountTwoEndingToken2Balance).toString(16), 
+            BigNumber((200-150)*decimals).toString(16),
             'Wrong balance after swap for accountTwo'
         );
 
         assert.equal(
-            (new BN(accountThreeEndingToken3Balance,10)).toString(16), 
-            ((300-150)*decimals).toString(16),
+            BigNumber(accountThreeEndingToken3Balance).toString(16), 
+            BigNumber((300-150)*decimals).toString(16),
             'Wrong balance after swap for accountThree'
         );
         // ----
@@ -722,10 +722,10 @@ contract('EscrowContract', (accounts) => {
         const Token3Instance = await ERC20Mintable.new('t3','t3');
         var EscrowContractInstance;
         
-        await Token2Instance.mint(accountTwo ,'0x'+(200*decimals).toString(16), { from: accountOne });
-        await Token3Instance.mint(accountThree ,'0x'+(300*decimals).toString(16), { from: accountOne });
-        await Token2Instance.mint(accountFourth ,'0x'+(200*decimals).toString(16), { from: accountOne });
-        await Token3Instance.mint(accountFive ,'0x'+(300*decimals).toString(16), { from: accountOne });
+        await Token2Instance.mint(accountTwo ,'0x'+BigNumber(200*decimals).toString(16), { from: accountOne });
+        await Token3Instance.mint(accountThree ,'0x'+BigNumber(300*decimals).toString(16), { from: accountOne });
+        await Token2Instance.mint(accountFourth ,'0x'+BigNumber(200*decimals).toString(16), { from: accountOne });
+        await Token3Instance.mint(accountFive ,'0x'+BigNumber(300*decimals).toString(16), { from: accountOne });
     
         EscrowContractInstance = await EscrowContractMock.new({ from: accountOne});
         await EscrowContractInstance.init(
@@ -740,26 +740,26 @@ contract('EscrowContract', (accounts) => {
         , { from: accountOne}
         );
  
-        await Token2Instance.approve(EscrowContractInstance.address,'0x'+(200*decimals).toString(16), { from: accountTwo });
+        await Token2Instance.approve(EscrowContractInstance.address,'0x'+BigNumber(200*decimals).toString(16), { from: accountTwo });
         await EscrowContractInstance.deposit(Token2Instance.address, { from: accountTwo });
         
-        await Token3Instance.approve(EscrowContractInstance.address,'0x'+(300*decimals).toString(16), { from: accountThree });
+        await Token3Instance.approve(EscrowContractInstance.address,'0x'+BigNumber(300*decimals).toString(16), { from: accountThree });
         await EscrowContractInstance.deposit(Token3Instance.address, { from: accountThree });
         
-        await Token2Instance.approve(EscrowContractInstance.address,'0x'+(200*decimals).toString(16), { from: accountFourth });
+        await Token2Instance.approve(EscrowContractInstance.address,'0x'+BigNumber(200*decimals).toString(16), { from: accountFourth });
         await EscrowContractInstance.deposit(Token2Instance.address, { from: accountFourth });
         
-        await Token3Instance.approve(EscrowContractInstance.address,'0x'+(300*decimals).toString(16), { from: accountFive });
+        await Token3Instance.approve(EscrowContractInstance.address,'0x'+BigNumber(300*decimals).toString(16), { from: accountFive });
         await EscrowContractInstance.deposit(Token3Instance.address, { from: accountFive });
       
         // now locked
         
        
         // trying to unlock
-        await EscrowContractInstance.unlock( accountSix, Token2Instance.address, '0x'+(200*decimals).toString(16), {from: accountTwo});
-        await EscrowContractInstance.unlock( accountSeven, Token3Instance.address, '0x'+(300*decimals).toString(16), {from: accountThree});
-        await EscrowContractInstance.unlock( accountSix, Token2Instance.address, '0x'+(200*decimals).toString(16), {from: accountFourth});
-        await EscrowContractInstance.unlock( accountSeven, Token3Instance.address, '0x'+(300*decimals).toString(16), {from: accountFive});
+        await EscrowContractInstance.unlock( accountSix, Token2Instance.address, '0x'+BigNumber(200*decimals).toString(16), {from: accountTwo});
+        await EscrowContractInstance.unlock( accountSeven, Token3Instance.address, '0x'+BigNumber(300*decimals).toString(16), {from: accountThree});
+        await EscrowContractInstance.unlock( accountSix, Token2Instance.address, '0x'+BigNumber(200*decimals).toString(16), {from: accountFourth});
+        await EscrowContractInstance.unlock( accountSeven, Token3Instance.address, '0x'+BigNumber(300*decimals).toString(16), {from: accountFive});
         
         // withdraw
         await EscrowContractInstance.withdraw( {from: accountSix});
@@ -774,35 +774,35 @@ contract('EscrowContract', (accounts) => {
         const accountFiveEndingToken3Balance = (await Token3Instance.balanceOf(accountFive));
         
         assert.equal(
-            (new BN(accountTwoEndingToken2Balance,10)).toString(16), 
-            ((0)*decimals).toString(16),
+            BigNumber(accountTwoEndingToken2Balance).toString(16), 
+            BigNumber((0)*decimals).toString(16),
             'Wrong balance after swap for accountTwo'
         );
         assert.equal(
-            (new BN(accountThreeEndingToken3Balance,10)).toString(16), 
-            ((0)*decimals).toString(16),
+            BigNumber(accountThreeEndingToken3Balance).toString(16), 
+            BigNumber((0)*decimals).toString(16),
             'Wrong balance after swap for accountThree'
         );
         assert.equal(
-            (new BN(accountFourthEndingToken2Balance,10)).toString(16), 
-            ((0)*decimals).toString(16),
+            BigNumber(accountFourthEndingToken2Balance).toString(16), 
+            BigNumber((0)*decimals).toString(16),
             'Wrong balance after swap for accountFourth'
         );
         assert.equal(
-            (new BN(accountFiveEndingToken3Balance,10)).toString(16), 
-            ((0)*decimals).toString(16),
+            BigNumber(accountFiveEndingToken3Balance).toString(16), 
+            BigNumber((0)*decimals).toString(16),
             'Wrong balance after swap for accountFive'
         );
         
         assert.equal(
-            (new BN(accountSixEndingToken2Balance,10)).toString(16), 
-            ((200+200)*decimals).toString(16),
+            BigNumber(accountSixEndingToken2Balance).toString(16), 
+            BigNumber((200+200)*decimals).toString(16),
             'Wrong balance after swap for accountSix'
         );
 
         assert.equal(
-            (new BN(accountSevenEndingToken3Balance,10)).toString(16), 
-            ((300+300)*decimals).toString(16),
+            BigNumber(accountSevenEndingToken3Balance).toString(16), 
+            BigNumber((300+300)*decimals).toString(16),
             'Wrong balance after swap for accountSeven'
         );
         
@@ -814,7 +814,7 @@ contract('EscrowContract', (accounts) => {
 
         var EscrowContractInstance;
         
-        await Token2Instance.mint(accountTwo ,'0x'+(200*decimals).toString(16), { from: accountOne });
+        await Token2Instance.mint(accountTwo ,'0x'+BigNumber(200*decimals).toString(16), { from: accountOne });
 
         const accountTwoToken2Balance = (await Token2Instance.balanceOf(accountTwo));
 
@@ -825,13 +825,13 @@ contract('EscrowContract', (accounts) => {
             [200],// uint256[] memory minimums,
             10,// uint256 duration,
             1,// uint256 quorumCount,
-            [accountTwo,accountTwo],// address[] memory swapFrom,
-            [accountFourth,accountThree],// address[] memory swapTo,
+            [accountTwo, accountTwo],// address[] memory swapFrom,
+            [accountFourth, accountThree],// address[] memory swapTo,
             false// bool swapBackAfterEscrow
             , { from: accountOne}
         );
         
-        await Token2Instance.approve(EscrowContractInstance.address,'0x'+(200*decimals).toString(16), { from: accountTwo });
+        await Token2Instance.approve(EscrowContractInstance.address,'0x'+BigNumber(200*decimals).toString(16), { from: accountTwo });
         await EscrowContractInstance.deposit(Token2Instance.address, { from: accountTwo });
       
         // now locked
@@ -850,14 +850,14 @@ contract('EscrowContract', (accounts) => {
         const accountThreeEndingToken2Balance = (await Token2Instance.balanceOf(accountThree));
       
         assert.equal(
-            (new BN(accountFourthEndingToken2Balance,10)).toString(16), 
-            (100*decimals).toString(16), 
+            BigNumber(accountFourthEndingToken2Balance).toString(16), 
+            BigNumber(100*decimals).toString(16), 
             'Wrong balance after swap for accountFourth'
         );
 
         assert.equal(
-            (new BN(accountThreeEndingToken2Balance,10)).toString(16), 
-            (100*decimals).toString(16), 
+            BigNumber(accountThreeEndingToken2Balance).toString(16), 
+            BigNumber(100*decimals).toString(16), 
             'Wrong balance after swap for accountThree'
         );
         

@@ -1,4 +1,5 @@
-pragma solidity >=0.6.0 <0.7.0;
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
 
 import "../EscrowContract.sol";
 
@@ -9,7 +10,8 @@ contract EscrowContractMock is EscrowContract {
     }
     function fundsAvailable(address token) public view returns(uint256 ret) {
         uint256 indexR = escrowBox.recipientsIndex[_msgSender()];
-        ret = escrowBox.recipients[indexR].fundsAvailable[token];
+        //ret = escrowBox.recipients[indexR].fundsAvailable[token];
+        ret = recipientsFundsAvailable[indexR][token];
         
     }
     

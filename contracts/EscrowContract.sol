@@ -1,21 +1,22 @@
-pragma solidity >=0.6.0 <0.7.0;
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
 pragma experimental ABIEncoderV2;
 
-import "@openzeppelin/contracts-ethereum-package/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts-ethereum-package/contracts/utils/EnumerableMap.sol";
-import "@openzeppelin/contracts-ethereum-package/contracts/utils/EnumerableSet.sol";
-import "@openzeppelin/contracts-ethereum-package/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts-ethereum-package/contracts/math/SafeMath.sol";
-import "@openzeppelin/contracts-ethereum-package/contracts/utils/Address.sol";
-import "@openzeppelin/contracts-ethereum-package/contracts/utils/ReentrancyGuard.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/utils/structs/EnumerableMapUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/utils/structs/EnumerableSetUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/utils/math/SafeMathUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/utils/AddressUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 import "./IntercoinTrait.sol";
 
-contract EscrowContract is Initializable, OwnableUpgradeSafe, ReentrancyGuardUpgradeSafe, IntercoinTrait {
+contract EscrowContract is Initializable, OwnableUpgradeable, ReentrancyGuardUpgradeable, IntercoinTrait {
     
-    using SafeMath for uint256;
-    using Address for address;
-    using EnumerableMap for EnumerableMap.UintToAddressMap;
-    using EnumerableSet for EnumerableSet.AddressSet;
+    using SafeMathUpgradeable for uint256;
+    using AddressUpgradeable for address;
+    using EnumerableMapUpgradeable for EnumerableMapUpgradeable.UintToAddressMap;
+    using EnumerableSetUpgradeable for EnumerableSetUpgradeable.AddressSet;
     
     struct EscrowBox {
         Participant[] participants;
@@ -26,8 +27,8 @@ contract EscrowContract is Initializable, OwnableUpgradeSafe, ReentrancyGuardUpg
         uint256 timeEnd;
         uint256 duration;
         uint256 quorumCount;
-        EnumerableMap.UintToAddressMap swapFrom;
-        EnumerableMap.UintToAddressMap swapTo;
+        EnumerableMapUpgradeable.UintToAddressMap swapFrom;
+        EnumerableMapUpgradeable.UintToAddressMap swapTo;
         bool swapBackAfterEscrow;
         bool lock;
         bool exists;
@@ -43,9 +44,14 @@ contract EscrowContract is Initializable, OwnableUpgradeSafe, ReentrancyGuardUpg
     }
     struct Recipient {
         address addr;
-        mapping(address => uint256) fundsAvailable; // token => Amount
+        //mapping(address => uint256) fundsAvailable; // token => Amount
+        // moved to recipientsFundsAvailable
+        
         bool exists;
     }
+    // if one box
+    //  recipientsIndex->address(token) => amount
+    mapping(uint256 => mapping(address => uint256)) recipientsFundsAvailable;
    
     EscrowBox internal escrowBox;
     
@@ -125,7 +131,12 @@ contract EscrowContract is Initializable, OwnableUpgradeSafe, ReentrancyGuardUpg
         uint256 indexRtmpI;
         uint256 indexR = 0;
         
-        escrowBox.recipients.push(Recipient({addr: address(swapTo[0]), exists: true}));
+        
+        escrowBox.recipients.push(Recipient({
+            addr: address(swapTo[0]), 
+            exists: true
+        }));
+        
         escrowBox.recipientsIndex[swapTo[0]] = indexR;
         indexR++;
         
@@ -142,8 +153,9 @@ contract EscrowContract is Initializable, OwnableUpgradeSafe, ReentrancyGuardUpg
             if ((escrowBox.recipients[indexRtmpI].exists == true) && (escrowBox.recipients[indexRtmpI].addr == swapTo[i])) {
                 // 
             } else {
-                escrowBox.recipients.push(Recipient({addr: address(swapTo[i]), exists: true}));
                 escrowBox.recipientsIndex[swapTo[i]] = indexR;
+                escrowBox.recipients.push(Recipient({addr: address(swapTo[i]), exists: true}));
+                
                 indexR++;
             }
         }
@@ -168,10 +180,10 @@ contract EscrowContract is Initializable, OwnableUpgradeSafe, ReentrancyGuardUpg
         require(escrowBox.participants[index].token == token, "Such token does not exists for this participant ");
         
         
-        uint256 _allowedAmount = IERC20(token).allowance(_msgSender(), address(this));
+        uint256 _allowedAmount = IERC20Upgradeable(token).allowance(_msgSender(), address(this));
         require((_allowedAmount > 0), "Amount exceeds allowed balance");
         // try to get
-        bool success = IERC20(token).transferFrom(_msgSender(), address(this), _allowedAmount);
+        bool success = IERC20Upgradeable(token).transferFrom(_msgSender(), address(this), _allowedAmount);
         require(success == true, "Transfer tokens were failed"); 
         
         escrowBox.participants[index].balance = escrowBox.participants[index].balance.add(_allowedAmount);
@@ -229,7 +241,8 @@ contract EscrowContract is Initializable, OwnableUpgradeSafe, ReentrancyGuardUpg
         escrowBox.participants[indexP].unlockedBalance = escrowBox.participants[indexP].unlockedBalance.add(amount);
         
         // write fundsAvailable at recipient
-        escrowBox.recipients[indexR].fundsAvailable[token] = (escrowBox.recipients[indexR].fundsAvailable[token]).add(amount);
+        //escrowBox.recipients[indexR].fundsAvailable[token] = (escrowBox.recipients[indexR].fundsAvailable[token]).add(amount);
+        recipientsFundsAvailable[indexR][token] = (recipientsFundsAvailable[indexR][token]).add(amount);
         
     }
     
@@ -265,7 +278,10 @@ contract EscrowContract is Initializable, OwnableUpgradeSafe, ReentrancyGuardUpg
                 token = escrowBox.participants[indexP].token;
                 
                 escrowBox.participants[indexP].unlockedBalance = escrowBox.participants[indexP].unlockedBalance.add(amountLeft.div(recipientCount));
-                escrowBox.recipients[indexR].fundsAvailable[token] = (escrowBox.recipients[indexR].fundsAvailable[token]).add(amountLeft.div(recipientCount));
+                
+                //escrowBox.recipients[indexR].fundsAvailable[token] = (escrowBox.recipients[indexR].fundsAvailable[token]).add(amountLeft.div(recipientCount));
+                recipientsFundsAvailable[indexR][token] = (recipientsFundsAvailable[indexR][token]).add(amountLeft.div(recipientCount));
+                
                 recipientCount--;
                 
             }
@@ -300,7 +316,7 @@ contract EscrowContract is Initializable, OwnableUpgradeSafe, ReentrancyGuardUpg
             token = escrowBox.participants[indexP].token;
             escrowBox.participants[indexP].balance = 0;
             
-            success = IERC20(token).transfer(_msgSender(), amount);
+            success = IERC20Upgradeable(token).transfer(_msgSender(), amount);
             require(success == true, 'Transfer tokens were failed');
     
     
@@ -312,10 +328,13 @@ contract EscrowContract is Initializable, OwnableUpgradeSafe, ReentrancyGuardUpg
                 if (escrowBox.swapTo.get(i) == _msgSender())  {
                     indexP = escrowBox.participantsIndex[escrowBox.swapFrom.get(i)];
                     token = escrowBox.participants[indexP].token;
-                    amount = escrowBox.recipients[indexR].fundsAvailable[token];
+                    //amount = escrowBox.recipients[indexR].fundsAvailable[token];
+                    amount = recipientsFundsAvailable[indexR][token];
                     if (amount > 0) {
-                        escrowBox.recipients[indexR].fundsAvailable[token] = 0;
-                        success = IERC20(token).transfer(_msgSender(), amount);
+                        //escrowBox.recipients[indexR].fundsAvailable[token] = 0;
+                        recipientsFundsAvailable[indexR][token] = 0;
+                        
+                        success = IERC20Upgradeable(token).transfer(_msgSender(), amount);
                         require(success == true, 'Transfer tokens were failed');
                     }
                 }
@@ -326,7 +345,7 @@ contract EscrowContract is Initializable, OwnableUpgradeSafe, ReentrancyGuardUpg
             if (
                 //escrowBox.lock == true && 
                 escrowBox.swapBackAfterEscrow == true &&
-                escrowBox.timeEnd <= now
+                escrowBox.timeEnd <= block.timestamp
             ) {
                 
                 indexP = escrowBox.participantsIndex[_msgSender()]; 
@@ -340,7 +359,7 @@ contract EscrowContract is Initializable, OwnableUpgradeSafe, ReentrancyGuardUpg
                 token = escrowBox.participants[indexP].token;
                 escrowBox.participants[indexP].balance = 0;
                 
-                success = IERC20(token).transfer(_msgSender(), amount);
+                success = IERC20Upgradeable(token).transfer(_msgSender(), amount);
                 require(success == true, 'Transfer tokens were failed');
                 
             }
@@ -364,8 +383,8 @@ contract EscrowContract is Initializable, OwnableUpgradeSafe, ReentrancyGuardUpg
         
         if (quorum >= escrowBox.quorumCount) {
             escrowBox.lock = true;
-            escrowBox.timeStart = now;
-            escrowBox.timeEnd = now.add(escrowBox.duration);
+            escrowBox.timeStart = block.timestamp;
+            escrowBox.timeEnd = block.timestamp.add(escrowBox.duration);
             EscrowLocked();
         }
     }
