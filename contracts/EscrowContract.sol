@@ -6,14 +6,12 @@ import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/structs/EnumerableMapUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/structs/EnumerableSetUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/utils/math/SafeMathUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/AddressUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 import "./IntercoinTrait.sol";
 
 contract EscrowContract is Initializable, OwnableUpgradeable, ReentrancyGuardUpgradeable, IntercoinTrait {
     
-    using SafeMathUpgradeable for uint256;
     using AddressUpgradeable for address;
     using EnumerableMapUpgradeable for EnumerableMapUpgradeable.UintToAddressMap;
     using EnumerableSetUpgradeable for EnumerableSetUpgradeable.AddressSet;
@@ -124,7 +122,7 @@ contract EscrowContract is Initializable, OwnableUpgradeable, ReentrancyGuardUpg
             }));
             
             //event
-            EscrowStarted(participants[i]);
+            emit EscrowStarted(participants[i]);
         }
 
         uint256 indexP;
@@ -186,7 +184,7 @@ contract EscrowContract is Initializable, OwnableUpgradeable, ReentrancyGuardUpg
         bool success = IERC20Upgradeable(token).transferFrom(_msgSender(), address(this), _allowedAmount);
         require(success == true, "Transfer tokens were failed"); 
         
-        escrowBox.participants[index].balance = escrowBox.participants[index].balance.add(_allowedAmount);
+        escrowBox.participants[index].balance += _allowedAmount;
         
         if (escrowBox.participants[index].min <= escrowBox.participants[index].balance) {
             tryToLockEscrow();
@@ -233,16 +231,16 @@ contract EscrowContract is Initializable, OwnableUpgradeable, ReentrancyGuardUpg
         
         // check Available amount tokens at sender (and unlockedBalance not more than available)
         require(
-            (escrowBox.participants[indexP].balance).sub(escrowBox.participants[indexP].unlockedBalance) >= amount, 
+            escrowBox.participants[indexP].balance - escrowBox.participants[indexP].unlockedBalance >= amount, 
             "Amount exceeds balance available to unlock"
         );
         
         // write additional unlockedBalance at sender
-        escrowBox.participants[indexP].unlockedBalance = escrowBox.participants[indexP].unlockedBalance.add(amount);
+        escrowBox.participants[indexP].unlockedBalance += amount;
         
         // write fundsAvailable at recipient
         //escrowBox.recipients[indexR].fundsAvailable[token] = (escrowBox.recipients[indexR].fundsAvailable[token]).add(amount);
-        recipientsFundsAvailable[indexR][token] = (recipientsFundsAvailable[indexR][token]).add(amount);
+        recipientsFundsAvailable[indexR][token] += amount;
         
     }
     
@@ -272,15 +270,15 @@ contract EscrowContract is Initializable, OwnableUpgradeable, ReentrancyGuardUpg
                 }
                 indexR = escrowBox.recipientsIndex[escrowBox.swapTo.get(i)]; 
                 
-                amountLeft = escrowBox.participants[indexP].balance.sub(escrowBox.participants[indexP].unlockedBalance);
+                amountLeft = escrowBox.participants[indexP].balance - escrowBox.participants[indexP].unlockedBalance;
                 
                 recipient = escrowBox.swapTo.get(i);
                 token = escrowBox.participants[indexP].token;
                 
-                escrowBox.participants[indexP].unlockedBalance = escrowBox.participants[indexP].unlockedBalance.add(amountLeft.div(recipientCount));
+                escrowBox.participants[indexP].unlockedBalance += amountLeft/recipientCount;
                 
                 //escrowBox.recipients[indexR].fundsAvailable[token] = (escrowBox.recipients[indexR].fundsAvailable[token]).add(amountLeft.div(recipientCount));
-                recipientsFundsAvailable[indexR][token] = (recipientsFundsAvailable[indexR][token]).add(amountLeft.div(recipientCount));
+                recipientsFundsAvailable[indexR][token] += amountLeft/recipientCount;
                 
                 recipientCount--;
                 
@@ -355,7 +353,7 @@ contract EscrowContract is Initializable, OwnableUpgradeable, ReentrancyGuardUpg
                     "Such participant does not exists in this escrow"
                 );
                 
-                amount = escrowBox.participants[indexP].balance.sub(escrowBox.participants[indexP].unlockedBalance);
+                amount = escrowBox.participants[indexP].balance - escrowBox.participants[indexP].unlockedBalance;
                 token = escrowBox.participants[indexP].token;
                 escrowBox.participants[indexP].balance = 0;
                 
@@ -377,15 +375,15 @@ contract EscrowContract is Initializable, OwnableUpgradeable, ReentrancyGuardUpg
         uint256 quorum = 0;
         for (uint256 i = 0; i < escrowBox.participants.length; i++) {
             if (escrowBox.participants[i].min <= escrowBox.participants[i].balance) {
-                quorum = quorum.add(1);
+                quorum++;
             }
         }
         
         if (quorum >= escrowBox.quorumCount) {
             escrowBox.lock = true;
             escrowBox.timeStart = block.timestamp;
-            escrowBox.timeEnd = block.timestamp.add(escrowBox.duration);
-            EscrowLocked();
+            escrowBox.timeEnd = block.timestamp + escrowBox.duration;
+            emit EscrowLocked();
         }
     }
     
