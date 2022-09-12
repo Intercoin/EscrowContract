@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
-pragma experimental ABIEncoderV2;
+pragma solidity ^0.8.11;
+//pragma experimental ABIEncoderV2;
 
 import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/structs/EnumerableMapUpgradeable.sol";
@@ -8,10 +8,10 @@ import "@openzeppelin/contracts-upgradeable/utils/structs/EnumerableSetUpgradeab
 
 import "@openzeppelin/contracts-upgradeable/utils/AddressUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
-import "./IntercoinTrait.sol";
+
 import "./interfaces/IEscrowContract.sol";
 
-contract EscrowContract is Initializable, /*OwnableUpgradeable,*/ ReentrancyGuardUpgradeable, IntercoinTrait, IEscrowContract {
+contract EscrowContract is Initializable, /*OwnableUpgradeable,*/ ReentrancyGuardUpgradeable, IEscrowContract {
     
     using AddressUpgradeable for address;
     using EnumerableMapUpgradeable for EnumerableMapUpgradeable.UintToAddressMap;
