@@ -9,7 +9,7 @@ contract EscrowContractMock is EscrowContract {
         ret = escrowBox.participants.length;
     }
     function fundsAvailable(address token) public view returns(uint256 ret) {
-        uint256 indexR = escrowBox.recipientsIndex[_msgSender()];
+        uint256 indexR = escrowBox.recipientsIndex[msg.sender];
         //ret = escrowBox.recipients[indexR].fundsAvailable[token];
         ret = recipientsFundsAvailable[indexR][token];
         
