@@ -23,7 +23,10 @@ interface IEscrowContract {
         uint256 quorumCount,
         address[] memory swapFrom,
         address[] memory swapTo,
-        bool swapBackAfterEscrow
+        bool swapBackAfterEscrow,
+        address costManager,
+        address producedBy
+
     ) external;
        
 }

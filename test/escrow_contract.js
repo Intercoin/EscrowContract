@@ -2,7 +2,7 @@ const { ethers, waffle } = require('hardhat');
 const { BigNumber } = require('ethers');
 const { expect } = require('chai');
 const chai = require('chai');
-const { time } = require('@openzeppelin/test-helpers');
+//const { time } = require('@openzeppelin/test-helpers');
 
 const ZERO = BigNumber.from('0');
 const ONE = BigNumber.from('1');
@@ -17,6 +17,7 @@ const HUN = BigNumber.from('100');
 
 const ONE_ETH = ethers.utils.parseEther('1');    
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
+const NO_COSTMANAGER = ZERO_ADDRESS;
 
 describe("EscrowContract", function () {
     
@@ -39,6 +40,7 @@ describe("EscrowContract", function () {
 
 
     var EscrowFactory;
+    
     const TWO_HUNDRED_TOKENS = TWO.mul(HUN).mul(ONE_ETH);           //200
     const THREE_HUNDRED_TOKENS = THREE.mul(HUN).mul(ONE_ETH);       //300
     const ONE_HUNDRED_FIFTY_TOKENS = THREE_HUNDRED_TOKENS.div(TWO); //150
@@ -46,15 +48,45 @@ describe("EscrowContract", function () {
     var EscrowContractInstance;
     var tx,rc,event,instance,instancesCount;
     
-
     before("deploying", async() => {
         const EscrowFactoryF = await ethers.getContractFactory("EscrowFactory");
-        EscrowFactory = await EscrowFactoryF.deploy();
-
+        const EscrowContractF = await ethers.getContractFactory("EscrowContract");
+        const ReleaseManagerFactoryF = await ethers.getContractFactory("MockReleaseManagerFactory");
+        const ReleaseManagerF = await ethers.getContractFactory("MockReleaseManager");
         ERC20MintableF = await ethers.getContractFactory("ERC20Mintable");
-
         Token1Instance = await ERC20MintableF.deploy('t1','t1');
         Token2Instance = await ERC20MintableF.deploy('t2','t2');
+
+        let tx,rc,event,instance,instancesCount;
+        
+
+        let implementationReleaseManager    = await ReleaseManagerF.deploy();
+        let releaseManagerFactory   = await ReleaseManagerFactoryF.connect(owner).deploy(implementationReleaseManager.address);
+                
+        //
+        tx = await releaseManagerFactory.connect(owner).produce();
+        rc = await tx.wait(); // 0ms, as tx is already confirmed
+        event = rc.events.find(event => event.event === 'InstanceProduced');
+        [instance, instancesCount] = event.args;
+        let releaseManager = await ethers.getContractAt("MockReleaseManager",instance);
+
+
+        let implEscrowContract = await EscrowContractF.deploy();
+        EscrowFactory = await EscrowFactoryF.deploy(implEscrowContract.address, NO_COSTMANAGER);
+
+        // 
+        const factoriesList = [EscrowFactory.address];
+        const factoryInfo = [
+            [
+                1,//uint8 factoryIndex; 
+                1,//uint16 releaseTag; 
+                "0x53696c766572000000000000000000000000000000000000"//bytes24 factoryChangeNotes;
+            ]
+        ]
+        await EscrowFactory.connect(owner).registerReleaseManager(releaseManager.address);
+        await releaseManager.connect(owner).newRelease(factoriesList, factoryInfo);
+
+        
         
     });
     beforeEach("deploying", async() => {
