@@ -39,6 +39,7 @@ describe("EscrowContract", function () {
 
 
     var EscrowFactory;
+    
     const TWO_HUNDRED_TOKENS = TWO.mul(HUN).mul(ONE_ETH);           //200
     const THREE_HUNDRED_TOKENS = THREE.mul(HUN).mul(ONE_ETH);       //300
     const ONE_HUNDRED_FIFTY_TOKENS = THREE_HUNDRED_TOKENS.div(TWO); //150
@@ -46,10 +47,12 @@ describe("EscrowContract", function () {
     var EscrowContractInstance;
     var tx,rc,event,instance,instancesCount;
     
-
     before("deploying", async() => {
         const EscrowFactoryF = await ethers.getContractFactory("EscrowFactory");
-        EscrowFactory = await EscrowFactoryF.deploy();
+        const EscrowContractF = await ethers.getContractFactory("EscrowContract");
+
+        let implEscrowContract = await EscrowContractF.deploy();
+        EscrowFactory = await EscrowFactoryF.deploy(implEscrowContract.address);
 
         ERC20MintableF = await ethers.getContractFactory("ERC20Mintable");
 

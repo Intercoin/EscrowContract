@@ -3,7 +3,6 @@ pragma solidity ^0.8.11;
 
 import "@openzeppelin/contracts/proxy/Clones.sol";
 import "./interfaces/IEscrowContract.sol";
-import "./EscrowContract.sol";
 
 contract EscrowFactory {
     using Clones for address;
@@ -12,7 +11,7 @@ contract EscrowFactory {
     * @custom:shortd Escrow implementation address
     * @notice Escrow implementation address
     */
-    EscrowContract public immutable implementation;
+    address public immutable implementationEscrowContract;
 
     address[] public instances;
     
@@ -20,8 +19,10 @@ contract EscrowFactory {
 
     /**
     */
-    constructor() {
-        implementation      = new EscrowContract();
+    constructor(
+        address implEscrowContract
+    ) {
+        implementationEscrowContract = implEscrowContract;
         
     }
 
@@ -72,7 +73,7 @@ contract EscrowFactory {
         returns (address instance) 
     {
         
-        instance = address(implementation).clone();
+        instance = implementationEscrowContract.clone();
 
         _produce(instance);
 
