@@ -9,7 +9,7 @@ import "@openzeppelin/contracts-upgradeable/utils/AddressUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 
 import "./interfaces/IEscrowContract.sol";
-import "releasemanager/contracts/CostManagerHelper.sol";
+import "@artman325/releasemanager/contracts/CostManagerHelper.sol";
 
 /**
 *****************

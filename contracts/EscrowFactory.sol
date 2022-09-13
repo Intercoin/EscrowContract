@@ -3,8 +3,8 @@ pragma solidity ^0.8.11;
 
 import "@openzeppelin/contracts/proxy/Clones.sol";
 import "./interfaces/IEscrowContract.sol";
-import "releasemanager/contracts/CostManagerFactoryHelper.sol";
-import "releasemanager/contracts/ReleaseManagerHelper.sol";
+import "@artman325/releasemanager/contracts/CostManagerFactoryHelper.sol";
+import "@artman325/releasemanager/contracts/ReleaseManagerHelper.sol";
 
 /**
 ****************
