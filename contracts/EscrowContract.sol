@@ -118,10 +118,10 @@ contract EscrowContract is Initializable, /*OwnableUpgradeable,*/ ReentrancyGuar
     uint8 internal constant OPERATION_SHIFT_BITS = 240;  // 256 - 16
     // Constants representing operations
     uint8 internal constant OPERATION_INITIALIZE = 0x0;
-    uint8 internal constant OPERATION_DEPOSIT = 0x0;
-    uint8 internal constant OPERATION_UNLOCK = 0x0;
-    uint8 internal constant OPERATION_UNLOCKALL = 0x0;
-    uint8 internal constant OPERATION_WITHDRAW = 0x0;
+    uint8 internal constant OPERATION_DEPOSIT = 0x1;
+    uint8 internal constant OPERATION_UNLOCK = 0x2;
+    uint8 internal constant OPERATION_UNLOCKALL = 0x3;
+    uint8 internal constant OPERATION_WITHDRAW = 0x4;
 
     // if one box
     //  recipientsIndex->address(token) => amount
