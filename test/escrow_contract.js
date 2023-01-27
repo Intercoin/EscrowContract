@@ -72,7 +72,7 @@ describe("EscrowContract", function () {
 
 
         let implEscrowContract = await EscrowContractF.deploy();
-        EscrowFactory = await EscrowFactoryF.deploy(implEscrowContract.address, NO_COSTMANAGER);
+        EscrowFactory = await EscrowFactoryF.deploy(implEscrowContract.address, NO_COSTMANAGER, releaseManager.address);
 
         // 
         const factoriesList = [EscrowFactory.address];
@@ -83,7 +83,7 @@ describe("EscrowContract", function () {
                 "0x53696c766572000000000000000000000000000000000000"//bytes24 factoryChangeNotes;
             ]
         ]
-        await EscrowFactory.connect(owner).registerReleaseManager(releaseManager.address);
+
         await releaseManager.connect(owner).newRelease(factoriesList, factoryInfo);
 
         

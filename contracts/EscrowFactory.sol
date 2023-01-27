@@ -92,8 +92,10 @@ contract EscrowFactory  is CostManagerFactoryHelper, ReleaseManagerHelper{
     */
     constructor(
         address implEscrowContract,
-        address costManager
+        address costManager,
+        address releaseManager
     ) 
+        ReleaseManagerHelper(releaseManager)
         CostManagerFactoryHelper(costManager)
     {
         implementationEscrowContract = implEscrowContract;
