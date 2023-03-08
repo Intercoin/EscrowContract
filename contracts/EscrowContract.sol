@@ -93,9 +93,9 @@ contract EscrowContract is Initializable, /*OwnableUpgradeable,*/ ReentrancyGuar
         uint256 timeEnd;
         uint256 duration;
         uint256 quorumCount;
-        EnumerableMapUpgradeable.UintToAddressMap swapFrom;
-        EnumerableMapUpgradeable.UintToAddressMap swapTo;
-        bool swapBackAfterEscrow;
+        EnumerableMapUpgradeable.UintToAddressMap sendFrom;
+        EnumerableMapUpgradeable.UintToAddressMap sendTo;
+        bool sendBackAfterEscrow;
         bool lock;
         bool exists;
     }
@@ -134,6 +134,7 @@ contract EscrowContract is Initializable, /*OwnableUpgradeable,*/ ReentrancyGuar
     event EscrowLocked();
     //event EscrowEnded();
     
+    
     /**
      * Started Escrow mechanism
      * 
@@ -142,9 +143,9 @@ contract EscrowContract is Initializable, /*OwnableUpgradeable,*/ ReentrancyGuar
      * @param minimums array of minimums (one of complex arrays participants/tokens/minimums)
      * @param duration duration of escrow in seconds. will start since locked up to expire
      * @param quorumCount count of participants (which deposit own minimum). After last will initiate locked up
-     * @param swapFrom array of participants which resources swap from
-     * @param swapTo array of participants which resources swap to
-     * @param swapBackAfterEscrow if true, then: if withdraw is called after lock expired, and boxes still contain something, then SWAP BACK (swapTo->swapFrom) left resources
+     * @param sendFrom array of participants which resources send from
+     * @param sendTo array of participants which resources send to
+     * @param sendBackAfterEscrow if true, then: if withdraw is called after lock expired, and boxes still contain something, then SEND BACK (sendTo->sendFrom) left resources
      * @param costManager costManager address
      * @param producedBy producedBy address
      */
@@ -154,9 +155,9 @@ contract EscrowContract is Initializable, /*OwnableUpgradeable,*/ ReentrancyGuar
         uint256[] memory minimums,
         uint256 duration,
         uint256 quorumCount,
-        address[] memory swapFrom,
-        address[] memory swapTo,
-        bool swapBackAfterEscrow,
+        address[] memory sendFrom,
+        address[] memory sendTo,
+        bool sendBackAfterEscrow,
         address costManager,
         address producedBy
     ) 
@@ -171,21 +172,21 @@ contract EscrowContract is Initializable, /*OwnableUpgradeable,*/ ReentrancyGuar
         
         emit EscrowCreated(msg.sender);
         
-        require(participants.length > 0, "Participants list can not be empty");
-        require(tokens.length > 0, "Tokens list can not be empty");
-        require(minimums.length > 0, "Minimums list can not be empty");
-        require(swapFrom.length > 0, "SwapFrom list can not be empty");
-        require(swapTo.length > 0, "SwapTo list can not be empty");
-        require((participants.length) >= quorumCount, "Wrong quorumCount");
+        require(participants.length > 0, "PARTICIPANTS_LIST_EMPTY");
+        require(tokens.length > 0, "TOKENS_LIST_EMPTY");
+        require(minimums.length > 0, "MINIMUMS_LIST_EMPTY");
+        require(sendFrom.length > 0, "SEND_FROM_LIST_EMPTY");
+        require(sendTo.length > 0, "SEND_TO_LIST_EMPTY");
+        require((participants.length) >= quorumCount, "QUORUM_COUNT_TOO_LARGE");
         
         require((participants.length == tokens.length && tokens.length == minimums.length), "Parameters participants/tokens/minimums must be the same length");
-        require((swapFrom.length == swapTo.length), "Parameters swapFrom/swapTo must be the same length");
+        require((sendFrom.length == sendTo.length), "Parameters sendFrom/sendTo must be the same length");
         
         
         escrowBox.timeStart = 0;
         escrowBox.timeEnd = 0;
         escrowBox.duration = duration;
-        escrowBox.swapBackAfterEscrow = swapBackAfterEscrow;
+        escrowBox.sendBackAfterEscrow = sendBackAfterEscrow;
         escrowBox.lock = false;
         escrowBox.exists = true;
 
@@ -193,7 +194,7 @@ contract EscrowContract is Initializable, /*OwnableUpgradeable,*/ ReentrancyGuar
         
         for (uint256 i = 0; i < participants.length; i++) {
             escrowBox.participantsIndex[participants[i]] = i;
-            
+            tk
             escrowBox.participants.push(Participant({
                 addr: participants[i],
                 token: tokens[i],
@@ -214,38 +215,38 @@ contract EscrowContract is Initializable, /*OwnableUpgradeable,*/ ReentrancyGuar
         
         
         escrowBox.recipients.push(Recipient({
-            addr: address(swapTo[0]), 
+            addr: address(sendTo[0]), 
             exists: true
         }));
         
-        escrowBox.recipientsIndex[swapTo[0]] = indexR;
+        escrowBox.recipientsIndex[sendTo[0]] = indexR;
         indexR++;
         
-        for (uint256 i = 0; i < swapFrom.length; i++) {
+        for (uint256 i = 0; i < sendFrom.length; i++) {
 
-            indexP = escrowBox.participantsIndex[swapFrom[i]];
+            indexP = escrowBox.participantsIndex[sendFrom[i]];
 
             escrowBox.participants[indexP].recipientCount++;
             
 
-            // swapTo section
-            indexRtmpI = escrowBox.recipientsIndex[swapTo[i]];
+            // sendTo section
+            indexRtmpI = escrowBox.recipientsIndex[sendTo[i]];
             
-            if ((escrowBox.recipients[indexRtmpI].exists == true) && (escrowBox.recipients[indexRtmpI].addr == swapTo[i])) {
+            if ((escrowBox.recipients[indexRtmpI].exists == true) && (escrowBox.recipients[indexRtmpI].addr == sendTo[i])) {
                 // 
             } else {
-                escrowBox.recipientsIndex[swapTo[i]] = indexR;
-                escrowBox.recipients.push(Recipient({addr: address(swapTo[i]), exists: true}));
+                escrowBox.recipientsIndex[sendTo[i]] = indexR;
+                escrowBox.recipients.push(Recipient({addr: address(sendTo[i]), exists: true}));
                 
                 indexR++;
             }
         }
 
-        for (uint256 i = 0; i < swapFrom.length; i++) {
-            require(!swapFrom[i].isContract(), "address in `swapFrom` can not be a contract");
-            require(!swapTo[i].isContract(), "address in `swapTo` can not be a contract");
-            escrowBox.swapFrom.set(i, swapFrom[i]);
-            escrowBox.swapTo.set(i, swapTo[i]);
+        for (uint256 i = 0; i < sendFrom.length; i++) {
+            require(!sendFrom[i].isContract(), "SEND_FROM_CANT_BE_CONTRACT");
+            require(!sendTo[i].isContract(), "SEND_FROM_CANT_BE_CONTRACT");
+            escrowBox.sendFrom.set(i, sendFrom[i]);
+            escrowBox.sendTo.set(i, sendTo[i]);
         }
         
         _accountForOperation(
@@ -260,24 +261,24 @@ contract EscrowContract is Initializable, /*OwnableUpgradeable,*/ ReentrancyGuar
      * @param token token's address 
      */
     function deposit(address token) public nonReentrant()  {
-        require(escrowBox.exists == true, "Such Escrow does not exists");
-        require(escrowBox.lock == false, "Such Escrow have already locked up");
+        require(escrowBox.exists == true, "NO_SUCH_ESCROW");
+        require(escrowBox.lock == false, "ESCROW_ALREADY_LOCKED");
         
         // index can be zero for non-exists participants. we will check attr exists in struct
         uint256 index = escrowBox.participantsIndex[msg.sender]; 
         require(
             escrowBox.participants[index].exists == true && escrowBox.participants[index].addr == msg.sender, 
-            "Such participant does not exists in this escrow"
+            "NO_SUCH_PARTICIPANT"
         );
         
-        require(escrowBox.participants[index].token == token, "Such token does not exists for this participant ");
+        require(escrowBox.participants[index].token == token, "NO_SUCH_TOKEN_FOR_PARTICIPANT");
         
         
         uint256 _allowedAmount = IERC20Upgradeable(token).allowance(msg.sender, address(this));
-        require((_allowedAmount > 0), "Amount exceeds allowed balance");
+        require((_allowedAmount > 0), "ALLOWANCE_EXCEEDED");
         // try to get
         bool success = IERC20Upgradeable(token).transferFrom(msg.sender, address(this), _allowedAmount);
-        require(success == true, "Transfer tokens were failed"); 
+        require(success == true, "TRANSFER_FAILED"); 
         
         escrowBox.participants[index].balance += _allowedAmount;
         
@@ -300,27 +301,27 @@ contract EscrowContract is Initializable, /*OwnableUpgradeable,*/ ReentrancyGuar
      * @param amount token's amount
      */
     function unlock(address recipient, address token, uint256 amount) public {
-        require(escrowBox.exists == true, "Such Escrow does not exists");
-        require(escrowBox.lock == true, "Such Escrow have not locked yet");
-        // check exists sender in swap from
-        // check exists recipient in swap to
+        require(escrowBox.exists == true, "NO_SUCH_ESCROW");
+        require(escrowBox.lock == true, "ESCROW_NOT_LOCKED");
+        // check exists sender in send from
+        // check exists recipient in send to
         // also itis checked recipient as available 
         bool pairExists = false;
-        for (uint256 i = 0; i < escrowBox.swapFrom.length(); i++) {
+        for (uint256 i = 0; i < escrowBox.sendFrom.length(); i++) {
             if (
-                escrowBox.swapFrom.get(i) == msg.sender &&
-                escrowBox.swapTo.get(i) == recipient
+                escrowBox.sendFrom.get(i) == msg.sender &&
+                escrowBox.sendTo.get(i) == recipient
             )  {
                 pairExists = true;
             }
         }
-        require(pairExists == true, "Such participant is not exists via recipient");
+        require(pairExists == true, "NO_SUCH_PAIR");
         
         // check sender exist
         uint256 indexP = escrowBox.participantsIndex[msg.sender]; 
         require(
             escrowBox.participants[indexP].exists == true && escrowBox.participants[indexP].addr == msg.sender, 
-            "Such participant does not exists in this escrow"
+            "NO_SUCH_PARTICIPANT"
         );
         
         
@@ -332,7 +333,7 @@ contract EscrowContract is Initializable, /*OwnableUpgradeable,*/ ReentrancyGuar
         // check Available amount tokens at sender (and unlockedBalance not more than available)
         require(
             escrowBox.participants[indexP].balance - escrowBox.participants[indexP].unlockedBalance >= amount, 
-            "Amount exceeds balance available to unlock"
+            "UNLOCKED_BALANCE_EXCEEDED"
         );
         
         // write additional unlockedBalance at sender
@@ -350,17 +351,17 @@ contract EscrowContract is Initializable, /*OwnableUpgradeable,*/ ReentrancyGuar
     }
     
     /**
-     * Unlock all available tokens (deposited before) equally for recipents at `swap` pairs
+     * Unlock all available tokens (deposited before) equally for recipents at `send` pairs
      */
     function unlockAll() public {
-        require(escrowBox.exists == true, "Such Escrow does not exists");
-        require(escrowBox.lock == true, "Such Escrow have not locked yet");
+        require(escrowBox.exists == true, "NO_SUCH_ESCROW");
+        require(escrowBox.lock == true, "ESCROW_NOT_LOCKED");
         
         // check participant exist
         uint256 indexP = escrowBox.participantsIndex[msg.sender]; 
         require(
             escrowBox.participants[indexP].exists == true && escrowBox.participants[indexP].addr == msg.sender, 
-            "Such participant does not exists in this escrow"
+            "NO_SUCH_PARTICIPANT"
         );
         
         address recipient;
@@ -368,16 +369,16 @@ contract EscrowContract is Initializable, /*OwnableUpgradeable,*/ ReentrancyGuar
         uint256 recipientCount = 0;
         uint256 amountLeft = 0;
         uint256 indexR;
-        for (uint256 i = 0; i < escrowBox.swapFrom.length(); i++) {
-            if (escrowBox.swapFrom.get(i) == msg.sender)  {
+        for (uint256 i = 0; i < escrowBox.sendFrom.length(); i++) {
+            if (escrowBox.sendFrom.get(i) == msg.sender)  {
                 if (recipientCount == 0) {
                     recipientCount = escrowBox.participants[indexP].recipientCount;
                 }
-                indexR = escrowBox.recipientsIndex[escrowBox.swapTo.get(i)]; 
+                indexR = escrowBox.recipientsIndex[escrowBox.sendTo.get(i)]; 
                 
                 amountLeft = escrowBox.participants[indexP].balance - escrowBox.participants[indexP].unlockedBalance;
                 
-                recipient = escrowBox.swapTo.get(i);
+                recipient = escrowBox.sendTo.get(i);
                 token = escrowBox.participants[indexP].token;
                 
                 escrowBox.participants[indexP].unlockedBalance += amountLeft/recipientCount;
@@ -401,7 +402,7 @@ contract EscrowContract is Initializable, /*OwnableUpgradeable,*/ ReentrancyGuar
      * withdraw all tokens deposited and unlocked from other participants
      */
     function withdraw() public nonReentrant() {
-        require(escrowBox.exists == true, "Such Escrow does not exists");
+        require(escrowBox.exists == true, "NO_SUCH_ESCROW");
         
         // before locked up
         //// got own
@@ -419,23 +420,23 @@ contract EscrowContract is Initializable, /*OwnableUpgradeable,*/ ReentrancyGuar
             
             require(
                 escrowBox.participants[indexP].exists == true && escrowBox.participants[indexP].addr == msg.sender, 
-                "Such participant does not exists in this escrow"
+                "NO_SUCH_PARTICIPANT"
             );
             amount = escrowBox.participants[indexP].balance;
             token = escrowBox.participants[indexP].token;
             escrowBox.participants[indexP].balance = 0;
             
             success = IERC20Upgradeable(token).transfer(msg.sender, amount);
-            require(success == true, "Transfer tokens were failed");
+            require(success == true, "TRANSFER_FAILED");
     
     
         } else if (escrowBox.lock == true) {
             
             indexR = escrowBox.recipientsIndex[msg.sender];
             
-            for (uint256 i = 0; i < escrowBox.swapTo.length(); i++) {
-                if (escrowBox.swapTo.get(i) == msg.sender)  {
-                    indexP = escrowBox.participantsIndex[escrowBox.swapFrom.get(i)];
+            for (uint256 i = 0; i < escrowBox.sendTo.length(); i++) {
+                if (escrowBox.sendTo.get(i) == msg.sender)  {
+                    indexP = escrowBox.participantsIndex[escrowBox.sendFrom.get(i)];
                     token = escrowBox.participants[indexP].token;
                     //amount = escrowBox.recipients[indexR].fundsAvailable[token];
                     amount = recipientsFundsAvailable[indexR][token];
@@ -444,7 +445,7 @@ contract EscrowContract is Initializable, /*OwnableUpgradeable,*/ ReentrancyGuar
                         recipientsFundsAvailable[indexR][token] = 0;
                         
                         success = IERC20Upgradeable(token).transfer(msg.sender, amount);
-                        require(success == true, "Transfer tokens were failed");
+                        require(success == true, "TRANSFER_FAILED");
                     }
                 }
             }
@@ -453,7 +454,7 @@ contract EscrowContract is Initializable, /*OwnableUpgradeable,*/ ReentrancyGuar
             // also if escrow expired sender can gow own funds 
             if (
                 //escrowBox.lock == true && 
-                escrowBox.swapBackAfterEscrow == true &&
+                escrowBox.sendBackAfterEscrow == true &&
                 escrowBox.timeEnd <= block.timestamp
             ) {
                 
@@ -461,7 +462,7 @@ contract EscrowContract is Initializable, /*OwnableUpgradeable,*/ ReentrancyGuar
                 
                 require(
                     escrowBox.participants[indexP].exists == true && escrowBox.participants[indexP].addr == msg.sender, 
-                    "Such participant does not exists in this escrow"
+                    "NO_SUCH_PARTICIPANT"
                 );
                 
                 amount = escrowBox.participants[indexP].balance - escrowBox.participants[indexP].unlockedBalance;
@@ -469,7 +470,7 @@ contract EscrowContract is Initializable, /*OwnableUpgradeable,*/ ReentrancyGuar
                 escrowBox.participants[indexP].balance = 0;
                 
                 success = IERC20Upgradeable(token).transfer(msg.sender, amount);
-                require(success == true, "Transfer tokens were failed");
+                require(success == true, "TRANSFER_FAILED");
                 
             }
         }
@@ -486,7 +487,7 @@ contract EscrowContract is Initializable, /*OwnableUpgradeable,*/ ReentrancyGuar
      * 
      */
     function tryToLockEscrow() internal {
-        require(escrowBox.lock == false, "Such Escrow have already locked up");
+        require(escrowBox.lock == false, "ESCROW_ALREADY_LOCKED");
         uint256 quorum = 0;
         for (uint256 i = 0; i < escrowBox.participants.length; i++) {
             if (escrowBox.participants[i].min <= escrowBox.participants[i].balance) {
