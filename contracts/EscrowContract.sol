@@ -126,6 +126,9 @@ contract EscrowContract is Initializable, /*OwnableUpgradeable,*/ ReentrancyGuar
     // if one box
     //  recipientsIndex->address(token) => amount
     mapping(uint256 => mapping(address => uint256)) recipientsFundsAvailable;
+    mapping (address => mapping(address => string)) recipientsResultsURI; // recipient => author => ratings and reviews JSON
+    mapping (address => mapping(address => string)) recipientsResultsHash; // recipient => author => hash of JSON
+    mapping (address => string[]) resultsURIByRecipient; // recipient and reviews JSON
    
     EscrowBox internal escrowBox;
     
@@ -396,6 +399,19 @@ contract EscrowContract is Initializable, /*OwnableUpgradeable,*/ ReentrancyGuar
             uint256(uint160(msg.sender)),
             0
         );
+    }
+
+    /**
+     * leave ratings and reviews
+     */
+    function setResults(recipient, URI, hash) {
+        require(escrowBox.exists == true, "NO_SUCH_ESCROW");
+        require(escrowBox.lock == true, "ESCROW_NOT_LOCKED");
+        require(bytes(URI).length > 0, "EMPTY_URI");
+        require(bytes(recipientsResultsURI[recipient][msg.sender]).length == 0, "ALREADY_SET_RESULTS");
+        
+        recipientsResultsURI[recipient][msg.sender] = URI;
+        recipientsResultsHash[recipient][msg.sender] = hash;
     }
     
     /**
