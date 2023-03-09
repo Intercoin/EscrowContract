@@ -127,6 +127,7 @@ contract EscrowContract is Initializable, /*OwnableUpgradeable,*/ ReentrancyGuar
     uint8 internal constant OPERATION_WITHDRAW = 0x4;
     
     address factory;
+    address producedBy;
 
     // if one box
     //  recipientsIndex->address(token) => amount
@@ -160,7 +161,7 @@ contract EscrowContract is Initializable, /*OwnableUpgradeable,*/ ReentrancyGuar
 	 *	uint8 role;
      *  bool useWhitelist;
      * @param costManager costManager address
-     * @param producedBy producedBy address
+     * @param producedBy address which asked factory to produce this instance
      */
     function init(
         address[] memory participants,
@@ -225,6 +226,7 @@ contract EscrowContract is Initializable, /*OwnableUpgradeable,*/ ReentrancyGuar
         }
 
         factory = msg.sender;
+	producedBy = producedBy;
 
         uint256 indexP;
         uint256 indexRtmpI;
@@ -447,6 +449,7 @@ contract EscrowContract is Initializable, /*OwnableUpgradeable,*/ ReentrancyGuar
         require(escrowBox.lock, "ESCROW_NOT_LOCKED");
         require(bytes(URI).length > 0, "EMPTY_URI");
         require(pairExists, "NO_SUCH_PAIR");
+	require(recipient == producedBy, "NOT_PRODUCED_BY_RECIPIENT");
 	uint256 index = escrowBox.participantsIndex[msg.sender]; 
         require(
             escrowBox.participants[index].exists && escrowBox.participants[index].addr == msg.sender, 
