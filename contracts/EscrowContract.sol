@@ -403,8 +403,11 @@ contract EscrowContract is Initializable, /*OwnableUpgradeable,*/ ReentrancyGuar
 
     /**
      * leave ratings and reviews
+     * @param address recipient the one about whom the ratings and reviews are written
+     * @param string URI the URI at which they would be hosted
+     * @param string hash the hash of the content at that URI, might be empty
      */
-    function setResults(recipient, URI, hash) {
+    function setResults(address recipient, string URI, string hash) {
         require(escrowBox.exists == true, "NO_SUCH_ESCROW");
         require(escrowBox.lock == true, "ESCROW_NOT_LOCKED");
         require(bytes(URI).length > 0, "EMPTY_URI");
