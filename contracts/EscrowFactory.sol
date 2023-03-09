@@ -82,7 +82,8 @@ contract EscrowFactory  is CostManagerFactoryHelper, ReleaseManagerHelper{
     */
     address public immutable implementationEscrowContract;
 
-    address[] public instances;
+    mapping (address => boolean) instances;
+    uint256 instancesCount = 0;
     
     event InstanceCreated(address instance, uint instancesCount);
 
@@ -179,9 +180,9 @@ contract EscrowFactory  is CostManagerFactoryHelper, ReleaseManagerHelper{
     {
         require(instance != address(0), "CommunityCoinFactory: INSTANCE_CREATION_FAILED");
 
-        instances.push(instance);
+        instances[instance] = true;
         
-        emit InstanceCreated(instance, instances.length);
+        emit InstanceCreated(instance, ++instancesCount);
     }
 
      function _postProduce(
