@@ -131,6 +131,7 @@ contract EscrowContract is Initializable, /*OwnableUpgradeable,*/ ReentrancyGuar
     // if one box
     //  recipientsIndex->address(token) => amount
     mapping(uint256 => mapping(address => uint256)) recipientsFundsAvailable;
+    mapping(uint256 => mapping(address => mapping(address => uint256))) recipientsFundsUnlocked;
     
     WhitelistStruct refunders; // addresses that can call refund()
    
@@ -378,6 +379,7 @@ contract EscrowContract is Initializable, /*OwnableUpgradeable,*/ ReentrancyGuar
         // write fundsAvailable at recipient
         //escrowBox.recipients[indexR].fundsAvailable[token] = (escrowBox.recipients[indexR].fundsAvailable[token]).add(amount);
         recipientsFundsAvailable[indexR][token] += amount;
+	recipientsFundsUnlocked[indexR][indexP][token] += amount;
         
         _accountForOperation(
             OPERATION_UNLOCK << OPERATION_SHIFT_BITS,
@@ -435,25 +437,23 @@ contract EscrowContract is Initializable, /*OwnableUpgradeable,*/ ReentrancyGuar
     }
 
     /**
-     * leave ratings and reviews
+     * Use this to leave ratings and reviews after paying a recipient.
      * @param recipient the one about whom the ratings and reviews are written
+     * @param token the token that was paid to the recipient by msg.sender
      * @param URI the URI at which they would be hosted
      * @param hash the hash of the content at that URI, might be empty
      */
-    function setResults(address recipient, string URI, string hash) {
+    function setResults(address recipient, address token, string URI, string hash) {
         require(escrowBox.exists, "NO_SUCH_ESCROW");
         require(escrowBox.lock, "ESCROW_NOT_LOCKED");
         require(bytes(URI).length > 0, "EMPTY_URI");
-	bool pairExists = false;
-        for (uint256 i = 0; i < escrowBox.sendFrom.length(); i++) {
-            if (
-                escrowBox.sendFrom.get(i) == msg.sender &&
-                escrowBox.sendTo.get(i) == recipient
-            )  {
-                pairExists = true;
-            }
-        }
         require(pairExists, "NO_SUCH_PAIR");
+	uint256 index = escrowBox.participantsIndex[msg.sender]; 
+        require(
+            escrowBox.participants[index].exists && escrowBox.participants[index].addr == msg.sender, 
+            "NO_SUCH_PARTICIPANT"
+        );
+	require(recipientsFundsUnlocked[recipient][msg.sender][token] >= escrowBox.participants[index].balance / 2, "RECIPIENT_WASNT_PAID");
         IResults(factory).setResults(recipient, msg.sender, URI, hash);
     }
     
