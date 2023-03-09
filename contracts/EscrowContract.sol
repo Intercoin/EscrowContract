@@ -124,6 +124,8 @@ contract EscrowContract is Initializable, /*OwnableUpgradeable,*/ ReentrancyGuar
     uint8 internal constant OPERATION_UNLOCK = 0x2;
     uint8 internal constant OPERATION_UNLOCKALL = 0x3;
     uint8 internal constant OPERATION_WITHDRAW = 0x4;
+    
+    address factory;
 
     // if one box
     //  recipientsIndex->address(token) => amount
