@@ -91,6 +91,7 @@ contract EscrowContract is Initializable, /*OwnableUpgradeable,*/ ReentrancyGuar
         mapping(address => uint256) participantsIndex;
         Recipient[] recipients;
         mapping(address => uint256) recipientsIndex;
+	mapping(address => uint256) refunded;
         uint256 timeStart;
         uint256 timeEnd;
         uint256 duration;
@@ -325,6 +326,7 @@ contract EscrowContract is Initializable, /*OwnableUpgradeable,*/ ReentrancyGuar
         uint256 amount = escrowBox.participants[indexP].balance - escrowBox.participants[indexP].unlockedBalance;
         success = IERC20Upgradeable(token).transfer(participant, amount);
         require(success, "TRANSFER_FAILED");
+	refunded[participant] = amount;
     }
     
     /**
