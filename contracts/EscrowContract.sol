@@ -444,6 +444,16 @@ contract EscrowContract is Initializable, /*OwnableUpgradeable,*/ ReentrancyGuar
         require(escrowBox.exists, "NO_SUCH_ESCROW");
         require(escrowBox.lock, "ESCROW_NOT_LOCKED");
         require(bytes(URI).length > 0, "EMPTY_URI");
+	bool pairExists = false;
+        for (uint256 i = 0; i < escrowBox.sendFrom.length(); i++) {
+            if (
+                escrowBox.sendFrom.get(i) == msg.sender &&
+                escrowBox.sendTo.get(i) == recipient
+            )  {
+                pairExists = true;
+            }
+        }
+        require(pairExists, "NO_SUCH_PAIR");
         IResults(factory).setResults(recipient, msg.sender, URI, hash);
     }
     
