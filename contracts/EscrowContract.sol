@@ -132,7 +132,6 @@ contract EscrowContract is Initializable, /*OwnableUpgradeable,*/ ReentrancyGuar
     mapping(uint256 => mapping(address => uint256)) recipientsFundsAvailable;
     mapping (address => mapping(address => string)) recipientsResultsURI; // recipient => author => ratings and reviews JSON
     mapping (address => mapping(address => string)) recipientsResultsHash; // recipient => author => hash of JSON
-    mapping (address => string[]) resultsURIByRecipient; // recipient and reviews JSON
     
     WhitelistStruct refunders; // addresses that can call refund()
    
