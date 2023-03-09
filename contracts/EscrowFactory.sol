@@ -87,7 +87,7 @@ contract EscrowFactory  is CostManagerFactoryHelper, ReleaseManagerHelper{
     mapping (address => string[]) resultsURIByRecipient; // recipient and reviews JSON
 
     mapping (address => boolean) instances;
-    uint256 instancesCount = 0;
+    uint256 public instancesCount = 0;
     
     event InstanceCreated(address instance, uint instancesCount);
 
@@ -104,23 +104,6 @@ contract EscrowFactory  is CostManagerFactoryHelper, ReleaseManagerHelper{
         CostManagerFactoryHelper(costManager)
     {
         implementationEscrowContract = implEscrowContract;
-    }
-
-    ////////////////////////////////////////////////////////////////////////
-    // external section ////////////////////////////////////////////////////
-    ////////////////////////////////////////////////////////////////////////
-
-    /**
-    * @dev view amount of created instances
-    * @return amount amount instances
-    * @custom:shortd view amount of created instances
-    */
-    function instancesCount()
-        external 
-        view 
-        returns (uint256 amount) 
-    {
-        amount = instances.length;
     }
 
     ////////////////////////////////////////////////////////////////////////
