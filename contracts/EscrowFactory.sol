@@ -180,7 +180,7 @@ contract EscrowFactory  is CostManagerFactoryHelper, ReleaseManagerHelper{
      * @param string URI the URI at which they would be hosted
      * @param string hash the hash of the content at that URI, might be empty
      */
-    function setResults(address recipient, string URI, string hash) {
+    function setResults(address recipient, string URI, string hash) external {
         require(instances[msg.sender], "ONLY_FROM_INSTANCE");
         require(bytes(resultsURI[recipient][msg.sender]).length == 0, "ALREADY_SET_RESULTS");
         
