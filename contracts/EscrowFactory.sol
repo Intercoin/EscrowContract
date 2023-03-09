@@ -84,7 +84,6 @@ contract EscrowFactory  is CostManagerFactoryHelper, ReleaseManagerHelper{
 
     mapping (address => mapping(address => string)) resultsURI; // recipient => author => ratings and reviews JSON
     mapping (address => mapping(address => string)) resultsHash; // recipient => author => hash of JSON
-    mapping (address => string[]) resultsURIByRecipient; // recipient and reviews JSON
 
     mapping (address => boolean) instances;
     uint256 public instancesCount = 0;
