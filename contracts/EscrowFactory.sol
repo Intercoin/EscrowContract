@@ -159,9 +159,10 @@ contract EscrowFactory  is CostManagerFactoryHelper, ReleaseManagerHelper{
 
     /**
      * leave ratings and reviews, called only from an instance
-     * @param address recipient the one about whom the ratings and reviews are written
-     * @param string URI the URI at which they would be hosted
-     * @param string hash the hash of the content at that URI, might be empty
+     * @param recipient the one about whom the ratings and reviews are written
+     * @param sender the one who is leaving the review
+     * @param URI the URI at which they would be hosted
+     * @param hash the hash of the content at that URI, might be empty
      */
     function setResults(address recipient, address sender, string URI, string hash) external {
         require(instances[msg.sender], "ONLY_FROM_INSTANCE");
