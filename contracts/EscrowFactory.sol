@@ -82,6 +82,7 @@ contract EscrowFactory  is CostManagerFactoryHelper, ReleaseManagerHelper{
     */
     address public immutable implementationEscrowContract;
 
+    mapping (address => mapping(address => address)) resultsEscrow; // address of the EscrowContract called setResults()
     mapping (address => mapping(address => string)) resultsURI; // recipient => author => ratings and reviews JSON
     mapping (address => mapping(address => string)) resultsHash; // recipient => author => hash of JSON
 
@@ -162,12 +163,13 @@ contract EscrowFactory  is CostManagerFactoryHelper, ReleaseManagerHelper{
      * @param string URI the URI at which they would be hosted
      * @param string hash the hash of the content at that URI, might be empty
      */
-    function setResults(address recipient, string URI, string hash) external {
+    function setResults(address recipient, address sender, string URI, string hash) external {
         require(instances[msg.sender], "ONLY_FROM_INSTANCE");
-        require(bytes(resultsURI[recipient][msg.sender]).length == 0, "ALREADY_SET_RESULTS");
+        require(bytes(resultsURI[recipient][sender]).length == 0, "ALREADY_SET_RESULTS");
         
-        resultsURI[recipient][msg.sender] = URI;
-        resultsHash[recipient][msg.sender] = hash;
+        resultsURI[recipient][sender] = URI;
+        resultsHash[recipient][sender] = hash;
+        resultsEscrow[recipient][sender] = msg.sender;
     }
 
     ////////////////////////////////////////////////////////////////////////
