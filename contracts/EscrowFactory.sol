@@ -82,6 +82,10 @@ contract EscrowFactory  is CostManagerFactoryHelper, ReleaseManagerHelper{
     */
     address public immutable implementationEscrowContract;
 
+    mapping (address => mapping(address => string)) resultsURI; // recipient => author => ratings and reviews JSON
+    mapping (address => mapping(address => string)) resultsHash; // recipient => author => hash of JSON
+    mapping (address => string[]) resultsURIByRecipient; // recipient and reviews JSON
+
     mapping (address => boolean) instances;
     uint256 instancesCount = 0;
     
@@ -167,6 +171,21 @@ contract EscrowFactory  is CostManagerFactoryHelper, ReleaseManagerHelper{
         
         _postProduce(instance);
         
+    }
+
+
+    /**
+     * leave ratings and reviews, called only from an instance
+     * @param address recipient the one about whom the ratings and reviews are written
+     * @param string URI the URI at which they would be hosted
+     * @param string hash the hash of the content at that URI, might be empty
+     */
+    function setResults(address recipient, string URI, string hash) {
+        require(instances[msg.sender], "ONLY_FROM_INSTANCE");
+        require(bytes(resultsURI[recipient][msg.sender]).length == 0, "ALREADY_SET_RESULTS");
+        
+        resultsURI[recipient][msg.sender] = URI;
+        resultsHash[recipient][msg.sender] = hash;
     }
 
     ////////////////////////////////////////////////////////////////////////
