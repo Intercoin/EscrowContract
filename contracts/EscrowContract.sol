@@ -313,7 +313,7 @@ contract EscrowContract is Initializable, /*OwnableUpgradeable,*/ ReentrancyGuar
     /**
      * Can only be called by refunders.
      * Returns back to participant all the funds they deposited,
-     * which have not been withdrawn yet.
+     * which have not been unlocked yet.
      * @param participant the address which made the deposit
      */
     function refund(address participant)  {
@@ -368,7 +368,7 @@ contract EscrowContract is Initializable, /*OwnableUpgradeable,*/ ReentrancyGuar
         // check Available amount tokens at sender (and unlockedBalance not more than available)
         require(
             escrowBox.participants[indexP].balance - escrowBox.participants[indexP].unlockedBalance >= amount, 
-            "UNLOCKED_BALANCE_EXCEEDED"
+            "BALANCE_EXCEEDED"
         );
         
         // write additional unlockedBalance at sender
@@ -447,7 +447,9 @@ contract EscrowContract is Initializable, /*OwnableUpgradeable,*/ ReentrancyGuar
     }
     
     /**
-     * withdraw all tokens deposited and unlocked from other participants
+     * Before lock, used to withdraw all own deposited tokens.
+     * After lock, used to withdraw all tokens deposited and unlocked for msg.sender by other participants.
+     * Also, if escrow expired, sender can withdraw deposited tokens which were not unlocked yet
      */
     function withdraw() public nonReentrant() {
         require(escrowBox.exists, "NO_SUCH_ESCROW");
@@ -463,22 +465,24 @@ contract EscrowContract is Initializable, /*OwnableUpgradeable,*/ ReentrancyGuar
         uint256 indexP;
         uint256 indexR;
         bool success;
-        if (escrowBox.lock == false) {
+	bool canSendBack = escrowBox.sendBackAfterEscrow &&
+                escrowBox.timeEnd <= block.timestamp;
+        if (!escrowBox.lock || canSendBack) {
             indexP = escrowBox.participantsIndex[msg.sender]; 
             
             require(
                 escrowBox.participants[indexP].exists && escrowBox.participants[indexP].addr == msg.sender, 
                 "NO_SUCH_PARTICIPANT"
             );
-            amount = escrowBox.participants[indexP].balance;
+            amount = escrowBox.participants[indexP].balance
+	    	- (canSendBack ? escrowBox.participants[indexP].unlockedBalance : 0);
             token = escrowBox.participants[indexP].token;
             escrowBox.participants[indexP].balance = 0;
             
             success = IERC20Upgradeable(token).transfer(msg.sender, amount);
             require(success, "TRANSFER_FAILED");
-    
-    
-        } else if (escrowBox.lock) {
+        }
+	if (escrowBox.lock) {
             
             indexR = escrowBox.recipientsIndex[msg.sender];
             
@@ -496,30 +500,6 @@ contract EscrowContract is Initializable, /*OwnableUpgradeable,*/ ReentrancyGuar
                         require(success, "TRANSFER_FAILED");
                     }
                 }
-            }
-            
-            
-            // also if escrow expired sender can gow own funds 
-            if (
-                //escrowBox.lock && 
-                escrowBox.sendBackAfterEscrow &&
-                escrowBox.timeEnd <= block.timestamp
-            ) {
-                
-                indexP = escrowBox.participantsIndex[msg.sender]; 
-                
-                require(
-                    escrowBox.participants[indexP].exists && escrowBox.participants[indexP].addr == msg.sender, 
-                    "NO_SUCH_PARTICIPANT"
-                );
-                
-                amount = escrowBox.participants[indexP].balance - escrowBox.participants[indexP].unlockedBalance;
-                token = escrowBox.participants[indexP].token;
-                escrowBox.participants[indexP].balance = 0;
-                
-                success = IERC20Upgradeable(token).transfer(msg.sender, amount);
-                require(success, "TRANSFER_FAILED");
-                
             }
         }
     
