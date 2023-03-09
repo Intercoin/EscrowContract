@@ -9,6 +9,7 @@ import "@openzeppelin/contracts-upgradeable/utils/AddressUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 
 import "./interfaces/IEscrowContract.sol";
+import "./interfaces/IResults.sol";
 import "@artman325/releasemanager/contracts/CostManagerHelper.sol";
 
 /**
@@ -212,6 +213,8 @@ contract EscrowContract is Initializable, /*OwnableUpgradeable,*/ ReentrancyGuar
             emit EscrowStarted(participants[i]);
         }
 
+        factory = msg.sender;
+
         uint256 indexP;
         uint256 indexRtmpI;
         uint256 indexR = 0;
@@ -411,10 +414,7 @@ contract EscrowContract is Initializable, /*OwnableUpgradeable,*/ ReentrancyGuar
         require(escrowBox.exists == true, "NO_SUCH_ESCROW");
         require(escrowBox.lock == true, "ESCROW_NOT_LOCKED");
         require(bytes(URI).length > 0, "EMPTY_URI");
-        require(bytes(recipientsResultsURI[recipient][msg.sender]).length == 0, "ALREADY_SET_RESULTS");
-        
-        recipientsResultsURI[recipient][msg.sender] = URI;
-        recipientsResultsHash[recipient][msg.sender] = hash;
+        IResults(factory).setResults(recipient, URI, hash);
     }
     
     /**
