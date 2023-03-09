@@ -210,7 +210,6 @@ contract EscrowContract is Initializable, /*OwnableUpgradeable,*/ ReentrancyGuar
         
         for (uint256 i = 0; i < participants.length; i++) {
             escrowBox.participantsIndex[participants[i]] = i;
-            tk
             escrowBox.participants.push(Participant({
                 addr: participants[i],
                 token: tokens[i],
