@@ -120,7 +120,7 @@ contract EscrowContract is Initializable, /*OwnableUpgradeable,*/ ReentrancyGuar
     struct Trade {
         address from;
 	address to;
-	bool gradual;
+	bool offchain;
 	address token;
 	uint256 amount;
     }
@@ -378,6 +378,9 @@ contract EscrowContract is Initializable, /*OwnableUpgradeable,*/ ReentrancyGuar
         uint256 indexR;
         for (uint256 i = 0; i < escrowBox.trades.length(); i++) {
             if (escrowBox.trades[i].from == msg.sender)  {
+	    	if (escrowBox.trades[i].offchain) {
+		    continue; // user will gradually unlock as things happen offchain
+		}
                 if (recipientCount == 0) {
                     recipientCount = escrowBox.participants[indexP].recipientCount;
                 }
