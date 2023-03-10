@@ -89,8 +89,6 @@ contract EscrowContract is Initializable, /*OwnableUpgradeable,*/ ReentrancyGuar
     struct EscrowBox {
         Participant[] participants;
         mapping(address => uint256) participantsIndex;
-        Recipient[] recipients;
-        mapping(address => uint256) recipientsIndex;
 	Trade[] trades;
 	mapping(address => uint256) refunded;
         uint256 timeStart;
@@ -107,14 +105,6 @@ contract EscrowContract is Initializable, /*OwnableUpgradeable,*/ ReentrancyGuar
         uint256 min;
         uint256 balance;
         uint256 unlockedBalance;
-        uint256 recipientCount;
-        bool exists;
-    }
-    struct Recipient {
-        address addr;
-        //mapping(address => uint256) fundsAvailable; // token => Amount
-        // moved to recipientsFundsAvailable
-        
         bool exists;
     }
     struct Trade {
@@ -137,8 +127,8 @@ contract EscrowContract is Initializable, /*OwnableUpgradeable,*/ ReentrancyGuar
 
     // if one box
     //  recipientsIndex->address(token) => amount
-    mapping(uint256 => mapping(address => uint256)) recipientsFundsAvailable;
-    mapping(uint256 => mapping(address => mapping(address => uint256))) recipientsFundsUnlocked;
+    mapping(address => mapping(address => uint256)) recipientsFundsAvailable;
+    mapping(address => mapping(address => mapping(address => uint256))) recipientsFundsUnlocked;
     
     WhitelistStruct judges; // addresses that can call judgment()
    
@@ -218,7 +208,6 @@ contract EscrowContract is Initializable, /*OwnableUpgradeable,*/ ReentrancyGuar
                 min:  minimums[i],
                 balance: 0,
                 unlockedBalance: 0,
-                recipientCount: 0,
                 exists: true
             }));
             
@@ -230,41 +219,12 @@ contract EscrowContract is Initializable, /*OwnableUpgradeable,*/ ReentrancyGuar
 	producedBy = producedBy;
 
         uint256 indexP;
-        uint256 indexRtmpI;
-        uint256 indexR = 0;
-        
-        
-        escrowBox.recipients.push(Recipient({
-            addr: address(sendTo[0]), 
-            exists: true
-        }));
-        
-        escrowBox.recipientsIndex[sendTo[0]] = indexR;
-        indexR++;
         
         for (i = 0; i < trades.length; i++) {
-	
 	    require(!trades[i].from.isContract(), "SEND_FROM_CANT_BE_CONTRACT");
             require(!trades[i].to.isContract(), "SEND_TO_CANT_BE_CONTRACT");
 
             escrowBox.trades.push(trades[i]);
-
-            indexP = escrowBox.participantsIndex[trades[i].from];
-
-            escrowBox.participants[indexP].recipientCount++;
-            
-
-            // sendTo section
-            indexRtmpI = escrowBox.recipientsIndex[trades[i].to];
-            
-            if ((escrowBox.recipients[indexRtmpI].exists) && (escrowBox.recipients[indexRtmpI].addr == trades[i].to)) {
-                // 
-            } else {
-                escrowBox.recipientsIndex[trades[i].to] = indexR;
-                escrowBox.recipients.push(Recipient({addr: address(trades[i].to), exists: true}));
-                
-                indexR++;
-            }
         }
         
         _accountForOperation(
@@ -289,7 +249,7 @@ contract EscrowContract is Initializable, /*OwnableUpgradeable,*/ ReentrancyGuar
             "NO_SUCH_PARTICIPANT"
         );
         
-        require(escrowBox.participants[index].token == token, "NO_SUCH_TOKEN_FOR_PARTICIPANT");
+        require(escrowBox.participants[index].token == token, "WRONG_TOKEN");
         
         
         uint256 _allowedAmount = IERC20Upgradeable(token).allowance(msg.sender, address(this));
@@ -354,57 +314,7 @@ contract EscrowContract is Initializable, /*OwnableUpgradeable,*/ ReentrancyGuar
      */
     function unlock(address recipient, address token, uint256 amount) public {
     	_unlock(msg.sender, recipient, token, amount);
-    }
     
-    
-    /**
-     * Unlock all available tokens (deposited before) equally for recipents at `send` pairs
-     */
-    function unlockAll() public {
-        require(escrowBox.exists, "NO_SUCH_ESCROW");
-        require(escrowBox.lock, "ESCROW_NOT_LOCKED");
-        
-        // check participant exist
-        uint256 indexP = escrowBox.participantsIndex[msg.sender]; 
-        require(
-            escrowBox.participants[indexP].exists && escrowBox.participants[indexP].addr == msg.sender, 
-            "NO_SUCH_PARTICIPANT"
-        );
-        
-        address recipient;
-        address token;
-        uint256 recipientCount = 0;
-        uint256 amountLeft = 0;
-        uint256 indexR;
-        for (uint256 i = 0; i < escrowBox.trades.length(); i++) {
-            if (escrowBox.trades[i].from == msg.sender)  {
-	    	if (escrowBox.trades[i].offchain) {
-		    continue; // user will gradually unlock as things happen offchain
-		}
-                if (recipientCount == 0) {
-                    recipientCount = escrowBox.participants[indexP].recipientCount;
-                }
-                indexR = escrowBox.recipientsIndex[escrowBox.trades[i].to]; 
-                recipient = escrowBox.trades[i].to;
-                token = escrowBox.trades[i].token;
-		require(
-		    escrowBox.trades[i].amount <= escrowBox.participants[indexP].balance - escrowBox.participants[indexP].unlockedBalance,
-		    "TRADE_AMOUNT_EXCEEDS_BALANCE"
-		);
-                escrowBox.participants[indexP].unlockedBalance += escrowBox.trades[i].amount;
-                recipientsFundsAvailable[indexR][token] += escrowBox.trades[i].amount;
-                
-                recipientCount--;
-                
-            }
-        }
-
-        _accountForOperation(
-            OPERATION_UNLOCKALL << OPERATION_SHIFT_BITS,
-            uint256(uint160(msg.sender)),
-            0
-        );
-    }
 
     /**
      * Use this to leave ratings and reviews after paying a recipient.
@@ -465,17 +375,14 @@ contract EscrowContract is Initializable, /*OwnableUpgradeable,*/ ReentrancyGuar
         }
 	if (escrowBox.lock) {
             
-            indexR = escrowBox.recipientsIndex[msg.sender];
-            
-            for (uint256 i = 0; i < escrowBox.sendTo.length(); i++) {
+            for (uint256 i = 0; i < escrowBox.trades.length(); i++) {
                 if (escrowBox.trades[i].from == msg.sender)  {
                     indexP = escrowBox.participantsIndex[escrowBox.trades[i].from];
-                    token = escrowBox.participants[indexP].token;
-                    //amount = escrowBox.recipients[indexR].fundsAvailable[token];
-                    amount = recipientsFundsAvailable[indexR][token];
+                    token = trades[i].token;
+                    amount = recipientsFundsAvailable[trades[i].to][token];
                     if (amount > 0) {
                         //escrowBox.recipients[indexR].fundsAvailable[token] = 0;
-                        recipientsFundsAvailable[indexR][token] = 0;
+                        recipientsFundsAvailable[trades[i].to][token] = 0;
                         
                         success = IERC20Upgradeable(token).transfer(msg.sender, amount);
                         require(success, "TRANSFER_FAILED");
@@ -496,7 +403,8 @@ contract EscrowContract is Initializable, /*OwnableUpgradeable,*/ ReentrancyGuar
      * When a quorum of users deposited more than minimum, locks the escrow.
      */
     function lock() internal {
-        require(escrowBox.lock == false, "ESCROW_ALREADY_LOCKED");
+        require(escrowBox.exists, "NO_SUCH_ESCROW");
+        require(!escrowBox.lock, "ESCROW_ALREADY_LOCKED");
         uint256 quorum = 0;
         for (uint256 i = 0; i < escrowBox.participants.length; i++) {
             if (escrowBox.participants[i].min <= escrowBox.participants[i].balance) {
@@ -510,6 +418,29 @@ contract EscrowContract is Initializable, /*OwnableUpgradeable,*/ ReentrancyGuar
             escrowBox.timeEnd = block.timestamp + escrowBox.duration;
             emit EscrowLocked();
         }
+	
+	// Execute all trades except offchain ones
+	address recipient;
+        address token;
+        uint256 amountLeft = 0;
+        uint256 indexP, indexR;
+        for (uint256 i = 0; i < escrowBox.trades.length(); i++) {
+            if (escrowBox.trades[i].from == msg.sender)  {
+	    	if (escrowBox.trades[i].offchain) {
+		    continue; // user will gradually unlock as things happen offchain
+		}
+                token = escrowBox.trades[i].token;
+		require(
+		    escrowBox.trades[i].amount <= escrowBox.participants[indexP].balance - escrowBox.participants[indexP].unlockedBalance,
+		    "TRADE_AMOUNT_EXCEEDS_BALANCE"
+		);
+		recipient = escrowBox.trades[i].to;
+		indexP = escrowBox.participantsIndex[msg.sender];
+                escrowBox.participants[indexP].unlockedBalance += escrowBox.trades[i].amount;
+                recipientsFundsAvailable[escrowBox.trades[i].to][token] += escrowBox.trades[i].amount;
+            }
+        }
+
     }
     
     ////////////////////////////////////////////////////////////////////////
@@ -538,12 +469,10 @@ contract EscrowContract is Initializable, /*OwnableUpgradeable,*/ ReentrancyGuar
             escrowBox.participants[indexP].exists && escrowBox.participants[indexP].addr == sender, 
             "NO_SUCH_PARTICIPANT"
         );
-        
-        
-        uint256 indexR = escrowBox.recipientsIndex[recipient]; 
+       
         
         // check correct token in sender
-        require(escrowBox.participants[indexP].token == token, "Such token does not exists for this participant");
+        require(escrowBox.participants[indexP].token == token, "WRONG_TOKEN");
         
         // check Available amount tokens at sender (and unlockedBalance not more than available)
         require(
@@ -556,8 +485,8 @@ contract EscrowContract is Initializable, /*OwnableUpgradeable,*/ ReentrancyGuar
         
         // write fundsAvailable at recipient
         //escrowBox.recipients[indexR].fundsAvailable[token] = (escrowBox.recipients[indexR].fundsAvailable[token]).add(amount);
-        recipientsFundsAvailable[indexR][token] += amount;
-	recipientsFundsUnlocked[indexR][indexP][token] += amount;
+        recipientsFundsAvailable[recipient][token] += amount;
+	recipientsFundsUnlocked[recipient][sender][token] += amount;
         
         _accountForOperation(
             OPERATION_UNLOCK << OPERATION_SHIFT_BITS,
