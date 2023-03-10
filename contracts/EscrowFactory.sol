@@ -126,7 +126,6 @@ contract EscrowFactory  is CostManagerFactoryHelper, ReleaseManagerHelper{
     * @param quorumCount count of participants (which deposit own minimum). After last will initiate locked up
     * @param swapFrom array of participants which resources swap from
     * @param swapTo array of participants which resources swap to
-    * @param swapBackAfterEscrow if true, then: if withdraw is called after lock expired, and boxes still contain something, then SWAP BACK (swapTo->swapFrom) left resources
     * @return instance address of created instance `EscrowContract`
     * @custom:shortd creation EscrowContract instance
     */
@@ -137,7 +136,6 @@ contract EscrowFactory  is CostManagerFactoryHelper, ReleaseManagerHelper{
         uint256 duration,
         uint256 quorumCount,
         Trade[] memory trades,
-        bool swapBackAfterEscrow
     ) 
         public 
         returns (address instance) 
