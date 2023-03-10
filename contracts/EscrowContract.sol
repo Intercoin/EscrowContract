@@ -385,16 +385,14 @@ contract EscrowContract is Initializable, /*OwnableUpgradeable,*/ ReentrancyGuar
                     recipientCount = escrowBox.participants[indexP].recipientCount;
                 }
                 indexR = escrowBox.recipientsIndex[escrowBox.trades[i].to]; 
-                
-                amountLeft = escrowBox.participants[indexP].balance - escrowBox.participants[indexP].unlockedBalance;
-                
                 recipient = escrowBox.trades[i].to;
-                token = escrowBox.participants[indexP].token;
-                
-                escrowBox.participants[indexP].unlockedBalance += amountLeft/recipientCount;
-                
-                //escrowBox.recipients[indexR].fundsAvailable[token] = (escrowBox.recipients[indexR].fundsAvailable[token]).add(amountLeft.div(recipientCount));
-                recipientsFundsAvailable[indexR][token] += amountLeft/recipientCount;
+                token = escrowBox.trades[i].token;
+		require(
+		    escrowBox.trades[i].amount <= escrowBox.participants[indexP].balance - escrowBox.participants[indexP].unlockedBalance,
+		    "TRADE_AMOUNT_EXCEEDS_BALANCE"
+		);
+                escrowBox.participants[indexP].unlockedBalance += escrowBox.trades[i].amount;
+                recipientsFundsAvailable[indexR][token] += escrowBox.trades[i].amount;
                 
                 recipientCount--;
                 
