@@ -108,10 +108,11 @@ contract EscrowFactory  is CostManagerFactoryHelper, ReleaseManagerHelper{
     
     struct Trade {
         address from;
-        address to;
-        address token;
-        bool gradual;
-    };
+    	address to;
+    	bool gradual;
+    	address token;
+    	uint256 amount;
+    }
 
     ////////////////////////////////////////////////////////////////////////
     // public section //////////////////////////////////////////////////////
