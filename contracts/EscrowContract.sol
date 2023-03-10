@@ -377,15 +377,15 @@ contract EscrowContract is Initializable, /*OwnableUpgradeable,*/ ReentrancyGuar
         uint256 amountLeft = 0;
         uint256 indexR;
         for (uint256 i = 0; i < escrowBox.trades.length(); i++) {
-            if (escrowBox.trades.get(i).from == msg.sender)  {
+            if (escrowBox.trades[i].from == msg.sender)  {
                 if (recipientCount == 0) {
                     recipientCount = escrowBox.participants[indexP].recipientCount;
                 }
-                indexR = escrowBox.recipientsIndex[escrowBox.sendTo.get(i)]; 
+                indexR = escrowBox.recipientsIndex[escrowBox.trades[i].to]; 
                 
                 amountLeft = escrowBox.participants[indexP].balance - escrowBox.participants[indexP].unlockedBalance;
                 
-                recipient = escrowBox.sendTo.get(i);
+                recipient = escrowBox.trades[i].to;
                 token = escrowBox.participants[indexP].token;
                 
                 escrowBox.participants[indexP].unlockedBalance += amountLeft/recipientCount;
@@ -467,8 +467,8 @@ contract EscrowContract is Initializable, /*OwnableUpgradeable,*/ ReentrancyGuar
             indexR = escrowBox.recipientsIndex[msg.sender];
             
             for (uint256 i = 0; i < escrowBox.sendTo.length(); i++) {
-                if (escrowBox.sendTo.get(i) == msg.sender)  {
-                    indexP = escrowBox.participantsIndex[escrowBox.trades.get(i).from];
+                if (escrowBox.trades[i].from == msg.sender)  {
+                    indexP = escrowBox.participantsIndex[escrowBox.trades[i].from];
                     token = escrowBox.participants[indexP].token;
                     //amount = escrowBox.recipients[indexR].fundsAvailable[token];
                     amount = recipientsFundsAvailable[indexR][token];
