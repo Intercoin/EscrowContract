@@ -105,6 +105,13 @@ contract EscrowFactory  is CostManagerFactoryHelper, ReleaseManagerHelper{
     {
         implementationEscrowContract = implEscrowContract;
     }
+    
+    struct Trade {
+        address from;
+        address to;
+        address token;
+        bool gradual;
+    };
 
     ////////////////////////////////////////////////////////////////////////
     // public section //////////////////////////////////////////////////////
@@ -128,8 +135,7 @@ contract EscrowFactory  is CostManagerFactoryHelper, ReleaseManagerHelper{
         uint256[] memory minimums,
         uint256 duration,
         uint256 quorumCount,
-        address[] memory swapFrom,
-        address[] memory swapTo,
+        Trade[] memory trades,
         bool swapBackAfterEscrow
     ) 
         public 
@@ -146,8 +152,7 @@ contract EscrowFactory  is CostManagerFactoryHelper, ReleaseManagerHelper{
             minimums,
             duration,
             quorumCount,
-            swapFrom,
-            swapTo,
+            trades,
             swapBackAfterEscrow, costManager, 
             msg.sender
         );
