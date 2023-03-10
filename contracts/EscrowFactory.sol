@@ -124,8 +124,7 @@ contract EscrowFactory  is CostManagerFactoryHelper, ReleaseManagerHelper{
     * @param minimums array of minimums (one of complex arrays participants/tokens/minimums)
     * @param duration duration of escrow in seconds. will start since locked up to expire
     * @param quorumCount count of participants (which deposit own minimum). After last will initiate locked up
-    * @param swapFrom array of participants which resources swap from
-    * @param swapTo array of participants which resources swap to
+    * @param trades an array of trades to occur when the escrow.lock occurs
     * @return instance address of created instance `EscrowContract`
     * @custom:shortd creation EscrowContract instance
     */
