@@ -135,6 +135,7 @@ contract EscrowFactory  is CostManagerFactoryHelper, ReleaseManagerHelper{
         uint256 duration,
         uint256 quorumCount,
         Trade[] memory trades,
+        WhitelistStruct memory judges
     ) 
         public 
         returns (address instance) 
@@ -151,7 +152,8 @@ contract EscrowFactory  is CostManagerFactoryHelper, ReleaseManagerHelper{
             duration,
             quorumCount,
             trades,
-            swapBackAfterEscrow, costManager, 
+            judges,
+            costManager, 
             msg.sender
         );
         
