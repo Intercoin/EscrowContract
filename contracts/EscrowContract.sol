@@ -94,9 +94,9 @@ contract EscrowContract is Initializable, /*OwnableUpgradeable,*/ ReentrancyGuar
         bool exists;
     }
     struct EscrowBox {
-        mapping (address => Participant) participants;
 	Trade[] trades;
-	mapping(address => uint256) refunded;
+        mapping (address => Participant) participants;
+	mapping(address => boolean) judged;
         uint256 lockedTime;
         uint256 duration;
         bool lock;
@@ -131,6 +131,7 @@ contract EscrowContract is Initializable, /*OwnableUpgradeable,*/ ReentrancyGuar
     event EscrowCreated(address indexed addr);
     event EscrowStarted(address indexed participant);
     event EscrowLocked();
+    event EscrowJudged();
     //event EscrowEnded();
     
     
@@ -241,6 +242,7 @@ contract EscrowContract is Initializable, /*OwnableUpgradeable,*/ ReentrancyGuar
 	    }
         }
         require(index >= 0, "NO_SUCH_TRADE");
+	require(!escrowBox.judged[from][to], "ALREADY_JUDGED");
 	require(
             refundAmount + unlockAmount <= escrowBox.participants[from].balances[token] - escrowBox.participants[from].unlocked[token],
 	    "JUDGMENT_EXCEEDS_REMAINING_AMOUNT"
@@ -250,7 +252,8 @@ contract EscrowContract is Initializable, /*OwnableUpgradeable,*/ ReentrancyGuar
 	// do refund
         success = IERC20Upgradeable(token).transfer(participant, amount);
         require(success, "TRANSFER_FAILED");
-	refunded[from] += refundAmount;
+	escrowBox.judged[from][to] = true;
+	emit EscrowJudged(from, to, refundAmount, unlockAmount);
     }
     
     /**
