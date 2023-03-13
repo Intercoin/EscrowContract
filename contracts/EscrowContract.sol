@@ -137,8 +137,6 @@ contract EscrowContract is Initializable, /*OwnableUpgradeable,*/ ReentrancyGuar
     /**
      * Started Escrow mechanism
      * 
-     * @param tokens array of tokens (one of complex arrays participants/tokens/minimums)
-     * @param minimums array of minimums (one of complex arrays participants/tokens/minimums)
      * @param duration duration of escrow in seconds. will start since locked up to expire
      * @param trades an array of trades to occur when the escrow.lock occurs
      * @param judges whitelist data struct
@@ -150,8 +148,6 @@ contract EscrowContract is Initializable, /*OwnableUpgradeable,*/ ReentrancyGuar
      * @param producedBy address which asked factory to produce this instance
      */
     function init(
-        address[] memory tokens,
-        uint256[] memory minimums,
         uint256 duration,
         Trade[] memory trades,
         WhitelistStruct memory judges,
@@ -169,12 +165,7 @@ contract EscrowContract is Initializable, /*OwnableUpgradeable,*/ ReentrancyGuar
         
         emit EscrowCreated(msg.sender);
         
-        require(participants.length > 0, "PARTICIPANTS_LIST_EMPTY");
-        require(tokens.length > 0, "TOKENS_LIST_EMPTY");
-        require(minimums.length > 0, "MINIMUMS_LIST_EMPTY");
         require(trades.length > 0, "TRADES_LIST_EMPTY");
-        
-        require((participants.length == tokens.length && tokens.length == minimums.length), "Parameters participants/tokens/minimums must be the same length");
         
         factory = msg.sender;
 	producedBy = producedBy;
