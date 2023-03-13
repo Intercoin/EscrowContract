@@ -118,21 +118,20 @@ contract EscrowFactory  is CostManagerFactoryHelper, ReleaseManagerHelper{
     ////////////////////////////////////////////////////////////////////////
 
     /**
-    * @param participants array of participants (one of complex arrays participants/tokens/minimums)
-    * @param tokens array of tokens (one of complex arrays participants/tokens/minimums)
-    * @param minimums array of minimums (one of complex arrays participants/tokens/minimums)
-    * @param duration duration of escrow in seconds. will start since locked up to expire
-    * @param quorumCount count of participants (which deposit own minimum). After last will initiate locked up
-    * @param trades an array of trades to occur when the escrow.lock occurs
-    * @return instance address of created instance `EscrowContract`
-    * @custom:shortd creation EscrowContract instance
-    */
+     * Produce an individual Escrow instance, to complete trades onchain and offchain
+     * 
+     * @param duration duration of escrow in seconds. will start since locked up to expire
+     * @param trades an array of trades to occur when the escrow.lock occurs
+     * @param judges whitelist data struct
+     *  address contractAddress;
+	 *	bytes4 method;
+	 *	uint8 role;
+     *  bool useWhitelist;
+     * @return instance address of created instance `EscrowContract`
+     * @custom:shortd creation EscrowContract instance
+     */
     function produce(
-        address[] memory participants,
-        address[] memory tokens,
-        uint256[] memory minimums,
         uint256 duration,
-        uint256 quorumCount,
         Trade[] memory trades,
         WhitelistStruct memory judges
     ) 
@@ -145,11 +144,7 @@ contract EscrowFactory  is CostManagerFactoryHelper, ReleaseManagerHelper{
         _produce(instance);
 
         IEscrowContract(instance).init(
-            participants,
-            tokens,
-            minimums,
             duration,
-            quorumCount,
             trades,
             judges,
             costManager, 
