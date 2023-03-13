@@ -124,7 +124,7 @@ contract EscrowContract is Initializable, /*OwnableUpgradeable,*/ ReentrancyGuar
     mapping(address => mapping(address => uint256)) available;
     mapping(address => mapping(address => mapping(address => uint256))) unlocked;
     
-    WhitelistStruct judges; // addresses that can call judgment()
+    WhitelistStruct judges; // addresses that can call judge()
    
     EscrowBox internal escrowBox;
     
@@ -232,7 +232,7 @@ contract EscrowContract is Initializable, /*OwnableUpgradeable,*/ ReentrancyGuar
      * @param refundAmount the amount to return to the from address
      * @param unlockAmount the amount to unlock for the to address
      */
-    function judgment(address from, address to, address token, uint256 refundAmount, uint256 unlockAmount)  {
+    function judge(address from, address to, address token, uint256 refundAmount, uint256 unlockAmount)  {
         require (whitelisted(msg.sender), "REFUNDERS_ONLY");
 	int256 index = -1;
 	for (uint256 i = 0; i < trades.length; i++) {
