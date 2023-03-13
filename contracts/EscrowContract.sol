@@ -94,7 +94,7 @@ contract EscrowContract is Initializable, /*OwnableUpgradeable,*/ ReentrancyGuar
         bool exists;
     }
     struct EscrowBox {
-        Participant[] participants;
+        mapping (address => Participant) participants;
 	Trade[] trades;
 	mapping(address => uint256) refunded;
         uint256 lockedTime;
