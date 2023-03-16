@@ -133,7 +133,13 @@ contract EscrowContract is Initializable, /*OwnableUpgradeable,*/ ReentrancyGuar
     event EscrowLocked();
     event EscrowJudged();
     //event EscrowEnded();
-    
+
+    bytes32 public DOMAIN_SEPARATOR;
+    // keccak256("UnlockWithSignature(address from, address recipient,address token,uint256 amount, uint256 deadline,uint8 v,bytes32 r,bytes32 s)");
+    bytes32 public constant PERMIT_TYPEHASH = 0x8d2dfe7763a430cc5dd020f63c48eb9b314fce1bf3f4a5cedd431aa7f9a1fd03;
+    mapping(address => uint) public nonces;
+
+    error InvalidSignature();
     
     /**
      * Started Escrow mechanism
@@ -163,6 +169,20 @@ contract EscrowContract is Initializable, /*OwnableUpgradeable,*/ ReentrancyGuar
         _setCostManager(costManager);
         //__Ownable_init();
         __ReentrancyGuard_init();
+
+        uint chainId;
+        assembly {
+            chainId := chainid
+        }
+        DOMAIN_SEPARATOR = keccak256(
+            abi.encode(
+                keccak256('EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)'),
+                keccak256(bytes(name)),
+                keccak256(bytes('1')),
+                chainId,
+                address(this)
+            )
+        );
         
         emit EscrowCreated(msg.sender);
         
@@ -196,7 +216,7 @@ contract EscrowContract is Initializable, /*OwnableUpgradeable,*/ ReentrancyGuar
      * @dev Deposit token via approve the tokens on the exchange
      * @param token token's address 
      */
-    function deposit(address token) public nonReentrant()  {
+    function deposit(address token) public nonReentrant() external {
         require(escrowBox.lockedTime == 0, "ESCROW_ALREADY_LOCKED");
        
         
@@ -232,7 +252,7 @@ contract EscrowContract is Initializable, /*OwnableUpgradeable,*/ ReentrancyGuar
      * @param refundAmount the amount to return to the from address
      * @param unlockAmount the amount to unlock for the to address
      */
-    function judge(address from, address to, address token, uint256 refundAmount, uint256 unlockAmount)  {
+    function judge(address from, address to, address token, uint256 refundAmount, uint256 unlockAmount) external {
         require (whitelisted(msg.sender), "REFUNDERS_ONLY");
 	int256 index = -1;
 	for (uint256 i = 0; i < trades.length; i++) {
@@ -259,13 +279,38 @@ contract EscrowContract is Initializable, /*OwnableUpgradeable,*/ ReentrancyGuar
     /**
      * Unlock tokens (deposited earlier) for recipients
      * 
-     * @param recipient token's address 
+     * @param recipient who will be receiving them
      * @param token token's address 
      * @param amount token's amount
      */
-    function unlock(address recipient, address token, uint256 amount) public {
+    function unlock(address recipient, address token, uint256 amount) external {
     	_unlock(msg.sender, recipient, token, amount);
-    
+    }
+
+   /**
+     * Unlock tokens (deposited earlier) for recipients
+     * with signature from sender
+     * 
+     * @param sender who will be sending them
+     * @param recipient who will be receiving them
+     * @param token token's address 
+     * @param amount token's amount
+     */
+    function unlockWithSignature(address sender, address recipient, address token, uint256 total, uint256 deadline, uint8 v, bytes32 r, bytes32 s) external {
+        require(deadline >= block.timestamp, 'UniswapV2: EXPIRED');
+        bytes32 digest = keccak256(
+            abi.encodePacked(
+                '\x19\x01',
+                DOMAIN_SEPARATOR,
+                keccak256(abi.encode(PERMIT_TYPEHASH, owner, spender, value, nonces[owner]++, deadline))
+            )
+        );
+        address recoveredAddress = ecrecover(digest, v, r, s);
+        if(recoveredAddress == address(0) || recoveredAddress != sender) {
+            revert InvalidSignature();
+        }
+    	_unlock(sender, recipient, token, total - unlocked[recipient][sender][token]);
+    }
 
     /**
      * Use this to leave ratings and reviews after paying a recipient.
