@@ -457,7 +457,7 @@ contract EscrowContract is Initializable, /*OwnableUpgradeable,*/ ReentrancyGuar
         escrowBox.participants[sender].unlocked[token] += amount;
         
         // update information for recipient
-        available at[recipient][token] += amount;
+        available[recipient][token] += amount;
 	unlocked[recipient][sender][token] += amount;
         
         _accountForOperation(
