@@ -358,7 +358,7 @@ contract EscrowContract is Initializable, /*OwnableUpgradeable,*/ ReentrancyGuar
             for (uint256 i=0; i<tokens.length; ++i) {
                 address token = tokens[i];
                 require(
-                    escrowBox.participants[msg.sender].expected[token], 
+                    escrowBox.participants[msg.sender].balances[token], 
                     "NOTHING_TO_WITHDRAW"
                 );
                 amount = escrowBox.participants[msg.sender].balances[token]
