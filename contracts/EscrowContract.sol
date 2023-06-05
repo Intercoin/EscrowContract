@@ -270,7 +270,7 @@ contract EscrowContract is Initializable, /*OwnableUpgradeable,*/ ReentrancyGuar
 	// do unlock
 	_unlock(trades[index].from, trades[index].to, trades[index].token, unlockAmount);
 	// do refund
-        success = IERC20Upgradeable(token).transfer(participant, amount);
+        success = IERC20Upgradeable(token).transfer(participant, refundAmount);
         require(success, "TRANSFER_FAILED");
 	escrowBox.judged[from][to] = true;
 	emit EscrowJudged(from, to, refundAmount, unlockAmount);
