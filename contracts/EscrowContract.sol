@@ -420,7 +420,7 @@ contract EscrowContract is Initializable, /*OwnableUpgradeable,*/ ReentrancyGuar
 	    Trade trade = escrowBox.trades[i];
 //          require(
 //                escrowBox.participants[trade.from].balances[trade.token] 
-//                < escrowBox.participants[trade.from].unlocked[trade.token] + trade.amount,
+//                >= escrowBox.participants[trade.from].unlocked[trade.token] + trade.amount,
 //	        "TRADE_AMOUNT_EXCEEDS_BALANCE"
 //	    );
 	    escrowBox.participants[trade.from].unlocked[trade.token] += trade.amount;
@@ -449,7 +449,7 @@ contract EscrowContract is Initializable, /*OwnableUpgradeable,*/ ReentrancyGuar
         
         // check Available amount tokens at sender (and unlockedBalance not more than available)
         require(
-            escrowBox.participants[sender].balances[token] < escrowBox.participants[sender].unlocked[token] + amount, 
+            escrowBox.participants[sender].balances[token] >= escrowBox.participants[sender].unlocked[token] + amount, 
             "BALANCE_EXCEEDED"
         );
         
@@ -457,7 +457,7 @@ contract EscrowContract is Initializable, /*OwnableUpgradeable,*/ ReentrancyGuar
         escrowBox.participants[sender].unlocked[token] += amount;
         
         // update information for recipient
-        available[recipient][token] += amount;
+        available at[recipient][token] += amount;
 	unlocked[recipient][sender][token] += amount;
         
         _accountForOperation(
