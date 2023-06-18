@@ -97,7 +97,6 @@ contract EscrowContract is Initializable, /*OwnableUpgradeable,*/ ReentrancyGuar
         Trade[] trades;
         mapping (address => Participant) participants;
         uint256 expectedDepositCount;
-        mapping(address => mapping(address => bool)) arbitrated;
         uint256 duration;
         uint256 lockedTime;
     }
@@ -105,6 +104,8 @@ contract EscrowContract is Initializable, /*OwnableUpgradeable,*/ ReentrancyGuar
         address from;
         address to;
         bool offchain;
+        bool disputed;
+        bool arbitrated;
         address token;
         uint256 amount;
     }
@@ -144,9 +145,7 @@ contract EscrowContract is Initializable, /*OwnableUpgradeable,*/ ReentrancyGuar
     string internal constant EIP712_PERMIT = "Permit(address sender,address recipient,address token,uint256 total,uint256 deadline)";
     bytes32 internal constant EIP712_PERMIT_TYPEHASH = keccak256();
     struct Permit {
-        address sender;
-        address recipient;
-        address token;
+        uint256 index;
         uint256 total;
         uint256 deadline;
     }
@@ -242,38 +241,44 @@ contract EscrowContract is Initializable, /*OwnableUpgradeable,*/ ReentrancyGuar
     function deposit(address token, uint256 amount) nonReentrant() external {
         _deposit(msg.sender, token, amount, false);
     }
+
+    /**
+     * Can only be called by sender or recipient in a trade.
+     * Marks trade as disputed, so arbitrator can settle the dispute.
+     * @param index the index of the trade in the trades array
+     * @param refundAmount the amount to return to the from address
+     * @param unlockAmount the amount to unlock for the to address
+     */
+    function dispute(uint256 index, uint256 refundAmount, uint256 unlockAmount) external {
+        require(msg.sender == from || msg.sender || to, "TRADER_ONLY");
+        escrow.trades[i].disputed = true;
+    }
     
     /**
      * Can only be called by arbitrators in a dispute.
      * Can be used to refund some funds in a Trade back to sender,
      * and/or unlock some to the recipient.
-     * @param from address in trade
-     * @param to address in a trade
-     * @param token the token in a trade
+     * @param index the index of the trade in the trades array
      * @param refundAmount the amount to return to the from address
      * @param unlockAmount the amount to unlock for the to address
      */
-    function arbitrate(address from, address to, address token, uint256 refundAmount, uint256 unlockAmount) external {
+    function arbitrate(uint256 index, uint256 refundAmount, uint256 unlockAmount) external {
+        Trade trade = escrow.trades[index];
         require (whitelisted(msg.sender), "ARBITRATORS_ONLY");
-        int256 index = -1;
-        for (uint256 i = 0; i < escrow.trades.length; i++) {
-            if (escrow.trades[i].from == from && escrow.trades[i].to == to) {
-                index = int256(i);
-                break;
-            }
-        }
-        require(index >= 0, "NO_SUCH_TRADE");
-        require(!escrow.arbitrated[from][to], "ALREADY_ARBITRATED");
+        require(trade.disputed, "TRADE_NOT_DISPUTED");
+        require(!trade.arbitrated, "ALREADY_ARBITRATED");
         require(
-            refundAmount + unlockAmount <= escrow.participants[from].balances[token] - escrow.participants[from].unlocked[token],
+            refundAmount + unlockAmount <= 
+            escrow.participants[from].balances[token] - 
+            escrow.participants[from].unlocked[token],
             "ARBITRATE_EXCEEDS_REMAINING_AMOUNT"
         );
         // do unlock
-        _unlock(escrow.trades[index].from, escrow.trades[index].to, escrow.trades[index].token, unlockAmount);
+        _unlock(trade, unlockAmount);
         // do refund
         bool success = IERC20Upgradeable(token).transfer(escrow.trades[index].from, refundAmount);
         require(success, "TRANSFER_FAILED");
-        escrow.arbitrated[from][to] = true;
+        trade.arbitrated = true;
         emit EscrowArbitrated(from, to, refundAmount, unlockAmount);
 
         // TODO: either sender or recipient should endorse the arbitrator's decision
@@ -283,17 +288,17 @@ contract EscrowContract is Initializable, /*OwnableUpgradeable,*/ ReentrancyGuar
     /**
      * Unlock tokens (deposited earlier) for recipients
      * 
-     * @param recipient who will be receiving them
-     * @param token token's address 
-     * @param amount token's amount
+     * @param uint256 index the index of the trades in trades array
+     * @param amount additional amount to unlock
      */
-    function unlock(address recipient, address token, uint256 amount) external {
-    	_unlock(msg.sender, recipient, token, amount);
+    function unlock(uint256 index, uint256 amount) external {
+        Trade trade = escrow.trades[index];
+        require (trade.from == msg.sender, "NOT_AUTHORIZED");
+    	_unlock(trade, amount);
     }
 
    /**
-     * Deposit and immediately lock an amount of tokens for
-     * recipients that brings the total amount locked to permit.total .
+     * Unlock some amount, to bring total unlocked amount to permit.total .
      * The participants can exchange signed permits in a side channel, with
      * monotonically increasing totals, and eventually post them
      * to deposit and unlock the funds on each other's respective chains.
@@ -312,9 +317,7 @@ contract EscrowContract is Initializable, /*OwnableUpgradeable,*/ ReentrancyGuar
                 DOMAIN_SEPARATOR,
                 keccak256(
                     abi.encode(EIP712_PERMIT_TYPEHASH, 
-                    permit.sender, 
-                    permit.recipient, 
-                    permit.token, 
+                    permit.index, 
                     permit.total, 
                     permit.deadline
                 ))
@@ -325,7 +328,7 @@ contract EscrowContract is Initializable, /*OwnableUpgradeable,*/ ReentrancyGuar
             revert InvalidSignature();
         }
     	_unlock(
-            permit.sender, permit.recipient, permit.token,
+            permit.index,
             permit.total - unlocked[permit.recipient][permit.sender][permit.token]
         );
     }
@@ -347,29 +350,22 @@ contract EscrowContract is Initializable, /*OwnableUpgradeable,*/ ReentrancyGuar
 
     /**
      * Use this to leave ratings and reviews after paying a recipient.
-     * @param recipient the one about whom the ratings and reviews are written
+     * @param index the index of the trade in the trades array
      * @param token the token that was paid
      * @param URI the URI at which they would be hosted
      * @param hash the hash of the content at that URI, might be empty
      */
-    function setResults(address recipient, address token, string URI, string hash) external {
+    function setResults(uint256 index, string URI, string hash) external {
         require(escrow.lockedTime > 0, "ESCROW_NOT_LOCKED");
         require(bytes(URI).length > 0, "EMPTY_URI");
         require(recipient == producedBy, "NOT_PRODUCED_BY_RECIPIENT");
-        int256 index = -1;
-        for (uint256 i = 0; i < escrow.trades.length; ++i) {
-            Trade trade = escrow.trades[i];
-            if (trade.from == msg.sender && trade.to = recipient) {
-                index = i;
-                require(
-                    unlocked[recipient][msg.sender][token] >=
-                    trade.amount / 2,
-                    "NOT_PAID_ENOUGH_FOR_RESULT"
-                );
-                break;
-            }
-        }
-        require(index >= 0, "NO_SUCH_TRADE");
+        Trade trade = escrow.trades[index];
+        require(trade.from == msg.sender, "DIDNT_PAY");
+        require(
+            unlocked[trade.to][trade.from][token] >=
+            trade.amount / 2,
+            "DIDNT_PAY_ENOUGH"
+        );
 	    require(unlocked[recipient][msg.sender][token] >= escrow.trades[index].amount / 2, "NOT_PAID_ENOUGH_FOR_RESULT");
         IResults(factory).setResults(recipient, msg.sender, URI, hash);
     }
@@ -391,7 +387,10 @@ contract EscrowContract is Initializable, /*OwnableUpgradeable,*/ ReentrancyGuar
         uint256 amount;
         address token;
         bool success;
-	    bool canTakeBack = (escrow.lockedTime > 0 && escrow.lockedTime + escrow.duration <= block.timestamp);
+	    bool canTakeBack = (
+            escrow.lockedTime > 0 && 
+            escrow.lockedTime + escrow.duration <= block.timestamp
+        );
         if (escrow.lockedTime == 0 || canTakeBack) {
             for (uint256 i=0; i<tokens.length; ++i) {
                 address token = tokens[i];
@@ -471,33 +470,6 @@ contract EscrowContract is Initializable, /*OwnableUpgradeable,*/ ReentrancyGuar
 
     }
 
-    function _lock(address sender, address recipient, address token, uint256 amount) internal {
-        bool tradeExists = false;
-        for (uint256 i = 0; i < escrow.trades.length; i++) {
-            if (
-                escrow.trades[i].from == sender &&
-                escrow.trades[i].to == recipient &&
-                escrow.trades[i].token == token
-            )  {
-                tradeExists = true;
-            }
-        }
-        require(tradeExists, "NO_SUCH_TRADE");
-
-        _deposit(sender, token, amount, true);
-        escrow.participants[sender].unlocked[token] += amount;
-        
-        // update information for recipient
-        available[recipient][token] += amount;
-	    unlocked[recipient][sender][token] += amount;
-        
-        _accountForOperation(
-            OPERATION_UNLOCK << OPERATION_SHIFT_BITS,
-            uint256(uint160(sender)),
-            uint256(uint160(token))
-        );
-    }
-
     function _deposit(address sender, address token, uint256 amount, bool withPermit) nonReentrant() external {
         require(escrow.lockedTime == 0, "ESCROW_ALREADY_LOCKED");
         require(escrow.participants[sender].token == token, "WRONG_TOKEN");
@@ -533,38 +505,28 @@ contract EscrowContract is Initializable, /*OwnableUpgradeable,*/ ReentrancyGuar
         }
     }
     
-    function _unlock(address sender, address recipient, address token, uint256 amount) internal {
+    function _unlock(Trade trade, uint256 amount) internal {
         require(escrow.lockedTime > 0, "ESCROW_NOT_LOCKED");
         bool tradeExists = false;
-        for (uint256 i = 0; i < escrow.trades.length; i++) {
-            if (
-                escrow.trades[i].from == sender &&
-                escrow.trades[i].to == recipient &&
-                escrow.trades[i].token == token
-            )  {
-                tradeExists = true;
-            }
-        }
-        require(tradeExists, "NO_SUCH_TRADE");
         
         // check Available amount tokens at sender (and unlockedBalance not more than available)
         require(
-            escrow.participants[sender].balances[token] >=
-            escrow.participants[sender].unlocked[token] + amount, 
+            escrow.participants[trade.from].balances[trade.token] >=
+            escrow.participants[trade.from].unlocked[trade.token] + amount, 
             "BALANCE_EXCEEDED"
         );
         
         // write additional unlocked[token] at sender
-        escrow.participants[sender].unlocked[token] += amount;
+        escrow.participants[trade.from].unlocked[trade.token] += amount;
         
         // update information for recipient
-        available[recipient][token] += amount;
-	    unlocked[recipient][sender][token] += amount;
+        available[trade.to][trade.token] += amount;
+	    unlocked[trade.to][trade.from][trade.token] += amount;
         
         _accountForOperation(
             OPERATION_UNLOCK << OPERATION_SHIFT_BITS,
-            uint256(uint160(sender)),
-            uint256(uint160(token))
+            uint256(index),
+            uint256(uint160(trade.from))
         );
     }
   
