@@ -122,7 +122,7 @@ contract EscrowFactory  is CostManagerFactoryHelper, ReleaseManagerHelper{
      * 
      * @param duration duration of escrow in seconds. will start since locked up to expire
      * @param trades an array of trades to occur when the escrow.lock occurs
-     * @param judges whitelist data struct
+     * @param arbitrators whitelist data struct
      *  address contractAddress;
 	 *	bytes4 method;
 	 *	uint8 role;
@@ -133,7 +133,7 @@ contract EscrowFactory  is CostManagerFactoryHelper, ReleaseManagerHelper{
     function produce(
         uint256 duration,
         Trade[] memory trades,
-        WhitelistStruct memory judges
+        WhitelistStruct memory arbitrators
     ) 
         public 
         returns (address instance) 
@@ -146,7 +146,7 @@ contract EscrowFactory  is CostManagerFactoryHelper, ReleaseManagerHelper{
         IEscrowContract(instance).init(
             duration,
             trades,
-            judges,
+            arbitrators,
             costManager, 
             msg.sender
         );
