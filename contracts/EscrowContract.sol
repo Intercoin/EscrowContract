@@ -124,7 +124,7 @@ contract EscrowContract is Initializable, /*OwnableUpgradeable,*/ ReentrancyGuar
     event EscrowArbitrated(address indexed from, address indexed to, uint256 refundAmount, uint256 unlockAmount);
     event EscrowTradeInit(Trade trade);
     event EscrowTradeLocked();
-    event EscrowTradeExecuted();
+    event EscrowTradeExecuted(Trade trade);
     //event EscrowEnded();
 
     bytes32 public DOMAIN_SEPARATOR;
@@ -149,6 +149,14 @@ contract EscrowContract is Initializable, /*OwnableUpgradeable,*/ ReentrancyGuar
      * 
      * @param duration duration of escrow in seconds. will start since locked up to expire
      * @param trades an array of trades to occur when the escrow.lock occurs
+     * one trade is
+     *  address from;
+     *  address to;
+     *  bool offchain;
+     *  bool disputed;
+     *  bool arbitrated;
+     *  address token;
+     *  uint256 amount;
      * @param arbitrators whitelist data struct
      *  address contractAddress;
 	 *	bytes4 method;
@@ -391,8 +399,10 @@ contract EscrowContract is Initializable, /*OwnableUpgradeable,*/ ReentrancyGuar
         );
         if (escrow.lockedTime == 0 || canTakeBack) {
             for (uint256 i=0; i<tokens.length; ++i) {
-                address token = tokens[i];
-                if (escrow.participants[msg.sender].balances[token]) {
+                token = tokens[i];
+
+                //TODO 0: refactor this logic below
+                if (escrow.participants[msg.sender].balances[token] == 0) {
                     continue;
                 }
                 amount = escrow.participants[msg.sender].balances[token]
@@ -443,7 +453,7 @@ contract EscrowContract is Initializable, /*OwnableUpgradeable,*/ ReentrancyGuar
         }
         
         escrow.lockedTime = block.timestamp;
-        emit EscrowLocked(escrow.trades);
+        emit EscrowLocked();
 	
         // Execute all trades except offchain ones
         address sender;
@@ -470,7 +480,19 @@ contract EscrowContract is Initializable, /*OwnableUpgradeable,*/ ReentrancyGuar
 
     function _deposit(address sender, address token, uint256 amount, bool withPermit) nonReentrant() internal {
         require(escrow.lockedTime == 0, "ESCROW_ALREADY_LOCKED");
-        require(escrow.participants[sender].token == token, "WRONG_TOKEN");
+        //!!!!!!
+        //require(escrow.participants[sender].token == token, "WRONG_TOKEN");
+        //!!!!!!!!
+        bool isCorrectToken;// = false;
+        for (uint256 i = 0; i < escrow.trades.length; i++) {
+            if (escrow.trades[i].from == sender && escrow.trades[i].token == token) {
+                isCorrectToken = true;
+                break;
+            }
+        }
+        require(isCorrectToken, "WRONG_TOKEN");
+        //----------------
+        
 
         uint256 _allowedAmount = IERC20Upgradeable(token).allowance(sender, address(this));
         require((_allowedAmount > amount), "ALLOWANCE_EXCEEDED");
@@ -523,8 +545,8 @@ contract EscrowContract is Initializable, /*OwnableUpgradeable,*/ ReentrancyGuar
         
         _accountForOperation(
             OPERATION_UNLOCK << OPERATION_SHIFT_BITS,
-            uint256(trade.index),
-            uint256(uint160(trade.from))
+            uint256(uint160(trade.from)),
+            uint256(0)
         );
     }
   
