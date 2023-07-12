@@ -130,15 +130,18 @@ contract EscrowContract is Initializable, /*OwnableUpgradeable,*/ ReentrancyGuar
     bytes32 public DOMAIN_SEPARATOR;
     bytes32 constant SALT = 0x111111a6b4ccb1b6faa2625fe562bdd9a2321111100000000000000000000000;
 
-    // string internal constant EIP712_DOMAIN = "EIP712Domain(string name,string version,uint256 chainId,address verifyingContract,bytes32 salt)";
-    // bytes32 internal constant EIP712_DOMAIN_TYPEHASH = keccak256(abi.encodePacked(EIP712_DOMAIN));
-    // string internal constant EIP712_PERMIT = "Permit(address sender,address recipient,address token,uint256 total,uint256 deadline)";
-    // bytes32 internal constant EIP712_PERMIT_TYPEHASH = keccak256();
-    // struct Permit {
-    //     uint256 index;
-    //     uint256 total;
-    //     uint256 deadline;
-    // }
+    string internal constant EIP712_DOMAIN = "EIP712Domain(string name,string version,uint256 chainId,address verifyingContract,bytes32 salt)";
+    bytes32 internal constant EIP712_DOMAIN_TYPEHASH = keccak256(abi.encodePacked(EIP712_DOMAIN));
+    string internal constant EIP712_PERMIT = "Permit(address sender,address recipient,address token,uint256 index,uint256 total,uint256 deadline)";
+    bytes32 internal constant EIP712_PERMIT_TYPEHASH = keccak256(abi.encodePacked(EIP712_PERMIT));
+    struct Permit {
+        address sender;
+        address recipient;
+        address token;
+        uint256 index;
+        uint256 total;
+        uint256 deadline;
+    }
 
     mapping(address => uint) public nonces;
 
@@ -181,17 +184,17 @@ contract EscrowContract is Initializable, /*OwnableUpgradeable,*/ ReentrancyGuar
         //__Ownable_init();
         __ReentrancyGuard_init();
 
-        uint chainId = block.chainid;
-        // DOMAIN_SEPARATOR = keccak256(
-        //     abi.encode(
-        //         EIP712_DOMAIN_TYPEHASH,
-        //         keccak256(bytes('EscrowContract')),
-        //         keccak256(bytes('1')),
-        //         block.chainid,
-        //         address(this),
-        //         SALT
-        //     )
-        // );
+        //uint chainId = block.chainid;
+        DOMAIN_SEPARATOR = keccak256(
+            abi.encode(
+                EIP712_DOMAIN_TYPEHASH,
+                keccak256(bytes('EscrowContract')),
+                keccak256(bytes('1')),
+                block.chainid,
+                address(this),
+                SALT
+            )
+        );
         
         emit EscrowCreated(msg.sender);
         
@@ -310,48 +313,38 @@ contract EscrowContract is Initializable, /*OwnableUpgradeable,*/ ReentrancyGuar
      * 
      * @param permit specifies the sender, recipient, token address and total amount to unlock
      */
-    // function unlockWithPermit(Permit memory permit, uint8 v, bytes32 r, bytes32 s) external {
-    //     require(permit.deadline >= block.timestamp, 'EscrowContract: AUTHORIZATION_EXPIRED');
-    //     bytes32 digest = keccak256(
-    //         abi.encodePacked(
-    //             '\x19\x01',
-    //             DOMAIN_SEPARATOR,
-    //             keccak256(
-    //                 abi.encode(EIP712_PERMIT_TYPEHASH, 
-    //                 permit.index, 
-    //                 permit.total, 
-    //                 permit.deadline
-    //             ))
-    //         )
-    //     );
-    //     address recoveredAddress = ecrecover(hashPermit(permit), v, r, s);
-    //     if(recoveredAddress == address(0) || recoveredAddress != permit.sender) {
-    //         revert InvalidSignature();
-    //     }
+    function unlockWithPermit(Permit memory permit, uint8 v, bytes32 r, bytes32 s) external {
+        require(permit.deadline >= block.timestamp, 'EscrowContract: AUTHORIZATION_EXPIRED');
+        bytes32 digest = keccak256(
+            abi.encodePacked(
+                '\x19\x01',
+                DOMAIN_SEPARATOR,
+                keccak256(
+                    abi.encode(
+                        EIP712_PERMIT_TYPEHASH, 
+                        permit.sender, 
+                        permit.recipient, 
+                        permit.token, 
+                        permit.index, 
+                        permit.total, 
+                        permit.deadline
+                    )
+                )
+            )
+        );
+        address recoveredAddress = ecrecover(digest, v, r, s);
+        if(recoveredAddress == address(0) || recoveredAddress != permit.sender) {
+            revert InvalidSignature();
+        }
 
         
-    //     Trade storage trade = escrow.trades[permit.index];
-    // 	_unlock(
-    //         trade,
-    //         permit.total - unlocked[permit.recipient][permit.sender][permit.token]
-    //     );
-    // }
+        Trade storage trade = escrow.trades[permit.index];
+    	_unlock(
+            trade,
+            permit.total - unlocked[permit.recipient][permit.sender][permit.token]
+        );
+    }
     
-    // function hashPermit(Permit memory permit) internal pure returns (bytes32) {
-    //     return keccak256(abi.encodePacked(
-    //         "\\x19\\x01",
-    //     DOMAIN_SEPARATOR,
-    //     keccak256(abi.encode(
-    //             EIP712_PERMIT_TYPEHASH,
-    //             permit.sender,
-    //             permit.recipient,
-    //             permit.token,
-    //             permit.total,
-    //             permit.deadline
-    //         ))
-    //     ));
-    // }
-
     /**
      * Use this to leave ratings and reviews after paying a recipient.
      * @param index the index of the trade in the trades array
