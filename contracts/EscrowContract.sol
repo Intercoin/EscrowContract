@@ -8,8 +8,8 @@ import "@openzeppelin/contracts-upgradeable/utils/structs/EnumerableSetUpgradeab
 import "@openzeppelin/contracts-upgradeable/utils/AddressUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 
-import "../contracts/interfaces/IEscrowContract.sol";
-import "../contracts/interfaces/IResults.sol";
+import "./interfaces/IEscrowContract.sol";
+import "./interfaces/IResults.sol";
 import "@artman325/releasemanager/contracts/CostManagerHelper.sol";
 import "@artman325/whitelist/contracts/Whitelist.sol";
 
@@ -100,15 +100,6 @@ contract EscrowContract is Initializable, /*OwnableUpgradeable,*/ ReentrancyGuar
         uint256 duration;
         uint256 lockedTime;
     }
-    struct Trade {
-        address from;
-        address to;
-        bool offchain;
-        bool disputed;
-        bool arbitrated;
-        address token;
-        uint256 amount;
-    }
     uint8 internal constant OPERATION_SHIFT_BITS = 240;  // 256 - 16
     // Constants representing operations
     uint8 internal constant OPERATION_INITIALIZE = 0x0;
@@ -125,21 +116,20 @@ contract EscrowContract is Initializable, /*OwnableUpgradeable,*/ ReentrancyGuar
     mapping(address => mapping(address => uint256)) available;
     mapping(address => mapping(address => mapping(address => uint256))) unlocked;
     
-    WhitelistStruct arbitrators; // addresses that can call arbitrate()
-   
     Escrow public escrow;
     
     event EscrowCreated(address indexed addr);
     event EscrowStarted(address indexed participant);
     event EscrowLocked();
-    event EscrowArbitrated();
-    event EscrowTradeInit();
+    event EscrowArbitrated(address indexed from, address indexed to, uint256 refundAmount, uint256 unlockAmount);
+    event EscrowTradeInit(Trade trade);
     event EscrowTradeLocked();
     event EscrowTradeExecuted();
     //event EscrowEnded();
 
     bytes32 public DOMAIN_SEPARATOR;
-    bytes32 constant SALT = 0x111111a6b4ccb1b6faa2625fe562bdd9a23211111;
+    bytes32 constant SALT = 0x111111a6b4ccb1b6faa2625fe562bdd9a2321111100000000000000000000000;
+
     string internal constant EIP712_DOMAIN = "EIP712Domain(string name,string version,uint256 chainId,address verifyingContract,bytes32 salt)";
     bytes32 internal constant EIP712_DOMAIN_TYPEHASH = keccak256(abi.encodePacked(EIP712_DOMAIN));
     string internal constant EIP712_PERMIT = "Permit(address sender,address recipient,address token,uint256 total,uint256 deadline)";
@@ -165,14 +155,14 @@ contract EscrowContract is Initializable, /*OwnableUpgradeable,*/ ReentrancyGuar
 	 *	uint8 role;
      *  bool useWhitelist;
      * @param costManager costManager address
-     * @param producedBy address which asked factory to produce this instance
+     * @param producedBy_ address which asked factory to produce this instance
      */
     function init(
         uint256 duration,
         Trade[] memory trades,
         WhitelistStruct memory arbitrators,
         address costManager,
-        address producedBy
+        address producedBy_
     ) 
         public 
         override
@@ -200,7 +190,7 @@ contract EscrowContract is Initializable, /*OwnableUpgradeable,*/ ReentrancyGuar
         require(trades.length > 0, "TRADES_LIST_EMPTY");
         
         factory = msg.sender;
-	    producedBy = producedBy;
+	    producedBy = producedBy_;
         escrow.lockedTime = 0;
         escrow.duration = duration;
 
@@ -215,7 +205,7 @@ contract EscrowContract is Initializable, /*OwnableUpgradeable,*/ ReentrancyGuar
         
 	    uint256 i;
         for (i = 0; i < trades.length; ++i) {
-            Trade trade = trades[i];
+            Trade memory trade = trades[i];
             escrow.trades.push(trade);
 	        // require(!trades[i].from.isContract(), "SEND_FROM_CANT_BE_CONTRACT");
             // require(!trades[i].to.isContract(), "SEND_TO_CANT_BE_CONTRACT");
@@ -229,7 +219,7 @@ contract EscrowContract is Initializable, /*OwnableUpgradeable,*/ ReentrancyGuar
         
         _accountForOperation(
             OPERATION_INITIALIZE << OPERATION_SHIFT_BITS,
-            uint256(uint160(producedBy)),
+            uint256(uint160(producedBy_)),
             0
         );
     }
@@ -250,8 +240,8 @@ contract EscrowContract is Initializable, /*OwnableUpgradeable,*/ ReentrancyGuar
      * @param unlockAmount the amount to unlock for the to address
      */
     function dispute(uint256 index, uint256 refundAmount, uint256 unlockAmount) external {
-        Trade trade = escrow.trades[index];
-        require(msg.sender == trade.from || msg.sender || trade.to, "TRADER_ONLY");
+        Trade storage trade = escrow.trades[index];
+        require(msg.sender == trade.from || msg.sender == trade.to, "TRADER_ONLY");
         trade.disputed = true;
     }
     
@@ -264,7 +254,7 @@ contract EscrowContract is Initializable, /*OwnableUpgradeable,*/ ReentrancyGuar
      * @param unlockAmount the amount to unlock for the to address
      */
     function arbitrate(uint256 index, uint256 refundAmount, uint256 unlockAmount) external {
-        Trade trade = escrow.trades[index];
+        Trade storage trade = escrow.trades[index];
         require (whitelisted(msg.sender), "ARBITRATORS_ONLY");
         require(trade.disputed, "TRADE_NOT_DISPUTED");
         require(!trade.arbitrated, "ALREADY_ARBITRATED");
@@ -295,7 +285,7 @@ contract EscrowContract is Initializable, /*OwnableUpgradeable,*/ ReentrancyGuar
      * @param amount additional amount to unlock
      */
     function unlock(uint256 index, uint256 amount) external {
-        Trade trade = escrow.trades[index];
+        Trade storage trade = escrow.trades[index];
         require (trade.from == msg.sender, "NOT_AUTHORIZED");
     	_unlock(trade, amount);
     }
@@ -330,8 +320,11 @@ contract EscrowContract is Initializable, /*OwnableUpgradeable,*/ ReentrancyGuar
         if(recoveredAddress == address(0) || recoveredAddress != permit.sender) {
             revert InvalidSignature();
         }
+
+        
+        Trade storage trade = escrow.trades[permit.index];
     	_unlock(
-            permit.index,
+            trade,
             permit.total - unlocked[permit.recipient][permit.sender][permit.token]
         );
     }
@@ -357,21 +350,22 @@ contract EscrowContract is Initializable, /*OwnableUpgradeable,*/ ReentrancyGuar
      * @param URI the URI at which they would be hosted
      * @param hash the hash of the content at that URI, might be empty
      */
-    function setResults(uint256 index, string URI, string hash) external {
+    function setResults(uint256 index, string calldata URI, string calldata hash) external {
         require(escrow.lockedTime > 0, "ESCROW_NOT_LOCKED");
         require(bytes(URI).length > 0, "EMPTY_URI");
-        Trade trade = escrow.trades[index];
+        Trade storage trade = escrow.trades[index];
         require(trade.from == msg.sender, "DIDNT_PAY");
         require(
             unlocked[trade.to][trade.from][trade.token] >=
             trade.amount / 2,
             "DIDNT_PAY_ENOUGH"
         );
-	    require(unlocked[trade.to][trade.from][trade.token] >= 
-            trade.amount / 2, 
+	    require(
+            unlocked[trade.to][trade.from][trade.token] >= trade.amount / 2, 
             "DIDNT_PAY_ENOUGH"
         );
-        IResults(factory).setResults(recipient, msg.sender, URI, hash);
+
+        IResults(factory).setResults(trade.to, trade.from, URI, hash);
     }
     
     /**
@@ -441,7 +435,7 @@ contract EscrowContract is Initializable, /*OwnableUpgradeable,*/ ReentrancyGuar
         require(escrow.lockedTime == 0, "ESCROW_ALREADY_LOCKED");
 	
         for (uint256 i = 0; i < escrow.trades.length; i++) {
-            Trade trade = escrow.trades[i];
+            Trade storage trade = escrow.trades[i];
             if (escrow.participants[trade.from].balances[trade.token]
               < escrow.participants[trade.from].expected[trade.token]) {
                  return false; // not yet ready to lock
@@ -459,7 +453,7 @@ contract EscrowContract is Initializable, /*OwnableUpgradeable,*/ ReentrancyGuar
             if (escrow.trades[i].offchain)  {
                 continue; // user will gradually unlock as things happen offchain
             }
-            Trade trade = escrow.trades[i];
+            Trade storage trade = escrow.trades[i];
             // require(
             //     escrow.participants[trade.from].balances[trade.token] 
             //     >= escrow.participants[trade.from].unlocked[trade.token] + trade.amount,
@@ -509,7 +503,7 @@ contract EscrowContract is Initializable, /*OwnableUpgradeable,*/ ReentrancyGuar
         }
     }
     
-    function _unlock(Trade trade, uint256 amount) internal {
+    function _unlock(Trade storage trade, uint256 amount) internal {
         require(escrow.lockedTime > 0, "ESCROW_NOT_LOCKED");
         bool tradeExists = false;
         
@@ -529,7 +523,7 @@ contract EscrowContract is Initializable, /*OwnableUpgradeable,*/ ReentrancyGuar
         
         _accountForOperation(
             OPERATION_UNLOCK << OPERATION_SHIFT_BITS,
-            uint256(index),
+            uint256(trade.index),
             uint256(uint160(trade.from))
         );
     }

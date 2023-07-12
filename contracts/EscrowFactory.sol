@@ -3,8 +3,10 @@ pragma solidity ^0.8.11;
 
 import "@openzeppelin/contracts/proxy/Clones.sol";
 import "./interfaces/IEscrowContract.sol";
+import "./interfaces/IResults.sol";
 import "@artman325/releasemanager/contracts/CostManagerFactoryHelper.sol";
 import "@artman325/releasemanager/contracts/ReleaseManagerHelper.sol";
+
 
 /**
 ****************
@@ -85,7 +87,7 @@ contract EscrowFactory  is CostManagerFactoryHelper, ReleaseManagerHelper{
     mapping (address => mapping(address => mapping(address => string))) resultsURI; // recipient => author => escrow => ratings and reviews JSON
     mapping (address => mapping(address => mapping(address => string))) resultsHash; // recipient => author => escrow => hash of JSON
 
-    mapping (address => boolean) instances;
+    mapping (address => bool) public instances;
     uint256 public instancesCount = 0;
     
     event InstanceCreated(address instance, uint instancesCount);
@@ -105,14 +107,6 @@ contract EscrowFactory  is CostManagerFactoryHelper, ReleaseManagerHelper{
         implementationEscrowContract = implEscrowContract;
     }
     
-    struct Trade {
-        address from;
-    	address to;
-    	bool offchain;
-    	address token;
-    	uint256 amount;
-    }
-
     ////////////////////////////////////////////////////////////////////////
     // public section //////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////
@@ -122,7 +116,14 @@ contract EscrowFactory  is CostManagerFactoryHelper, ReleaseManagerHelper{
      * 
      * @param duration duration of escrow in seconds. will start since locked up to expire
      * @param trades an array of trades to occur when the escrow.lock occurs
-     * @param arbitrators whitelist data struct
+        address from;
+        address to;
+        bool offchain;
+        bool disputed;
+        bool arbitrated;
+        address token;
+        uint256 amount;
+     * @param judges whitelist data struct
      *  address contractAddress;
 	 *	bytes4 method;
 	 *	uint8 role;
@@ -132,8 +133,8 @@ contract EscrowFactory  is CostManagerFactoryHelper, ReleaseManagerHelper{
      */
     function produce(
         uint256 duration,
-        Trade[] memory trades,
-        WhitelistStruct memory arbitrators
+        IEscrowContract.Trade[] memory trades,
+        IWhitelist.WhitelistStruct memory judges
     ) 
         public 
         returns (address instance) 
@@ -146,11 +147,11 @@ contract EscrowFactory  is CostManagerFactoryHelper, ReleaseManagerHelper{
         IEscrowContract(instance).init(
             duration,
             trades,
-            arbitrators,
+            judges,
             costManager, 
             msg.sender
         );
-        
+ 
         _postProduce(instance);
         
     }
@@ -163,9 +164,9 @@ contract EscrowFactory  is CostManagerFactoryHelper, ReleaseManagerHelper{
      * @param URI the URI at which they would be hosted
      * @param hash the hash of the content at that URI, might be empty
      */
-    function setResults(address recipient, address sender, string URI, string hash) external {
+    function setResults(address recipient, address sender, string calldata URI, string calldata hash) external {
         require(instances[msg.sender], "ONLY_FROM_INSTANCE");
-        require(bytes(resultsURI[recipient][sender]).length == 0, "ALREADY_SET_RESULTS");
+        require(bytes(resultsURI[recipient][sender][msg.sender]).length == 0, "ALREADY_SET_RESULTS");
         
         resultsURI[recipient][sender][msg.sender] = URI;
         resultsHash[recipient][sender][msg.sender] = hash;
