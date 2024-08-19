@@ -1,5 +1,5 @@
 {
-  "name": "escrowcontract",
+  "name": "@intercoin/escrow",
   "version": "1.1.1",
   "description": "A smart contract with the ability to exchange one token against others.",
   "main": "index.js",
