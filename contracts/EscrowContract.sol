@@ -9,7 +9,7 @@ import "@openzeppelin/contracts-upgradeable/utils/AddressUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 
 import "./interfaces/IEscrowContract.sol";
-import "@artman325/releasemanager/contracts/CostManagerHelper.sol";
+import "@intercoin/releasemanager/contracts/CostManagerHelper.sol";
 
 /**
 *****************
@@ -164,8 +164,7 @@ contract EscrowContract is Initializable, /*OwnableUpgradeable,*/ ReentrancyGuar
         override
         initializer 
     {
-        __CostManagerHelper_init(msg.sender);
-        _setCostManager(costManager);
+        __CostManagerHelper_init(msg.sender, costManager);
         //__Ownable_init();
         __ReentrancyGuard_init();
         
