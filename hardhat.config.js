@@ -26,9 +26,10 @@ module.exports = {
   networks: {
     hardhat: {
       allowUnlimitedContractSize: false,
-      gasPrice: "auto",
+      //gasPrice: "auto",
+      chainId: 137,
       forking: {
-        url: mainnetURL
+        url: maticURL
       }
     },
     kovan: {
@@ -83,7 +84,7 @@ module.exports = {
     mainnet: {
       url: mainnetURL,
       chainId: 1,
-      gasPrice: 20000000000,
+      //gasPrice: 20000000000,
       accounts: [process.env.private_key],
       saveDeployments: true
     }
@@ -100,9 +101,10 @@ module.exports = {
     currency: "USD"
   },
   etherscan: {
-    apiKey: process.env.MATIC_API_KEY  
-    //apiKey: process.env.ETHERSCAN_API_KEY
+    //apiKey: process.env.MATIC_API_KEY  
+    apiKey: process.env.ETHERSCAN_API_KEY
     //apiKey: process.env.BSCSCAN_API_KEY
+    
   },
   solidity: {
     compilers: [
